@@ -14,8 +14,9 @@ const text = (value, name) => {
   return value;
 };
 if (!figure || typeof figure !== "object") throw new Error("the default export is not an object");
-if (typeof figure.html !== "string") throw new Error("the default export has no html string");
-process.stdout.write(${JSON.stringify(MARKER)} + JSON.stringify({ html: figure.html, script: text(figure.script, "script"), css: text(figure.css, "css") }));
+const html = figure.html;
+if (typeof html !== "string") throw new Error("the default export has no html string");
+process.stdout.write(${JSON.stringify(MARKER)} + JSON.stringify({ html, script: text(figure.script, "script"), css: text(figure.css, "css") }));
 `;
 
 export class FigureError extends Error {}

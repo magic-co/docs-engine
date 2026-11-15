@@ -20,9 +20,9 @@ Preconditions:
 - `control-docs doctor` ends with `doctor: healthy`.
 - `docs/diagrams/figures/roast-line.mjs` in the site copy is the baseline module.
 
-- **Render.** Steps `{"goto": "/diagrams/figure/"}` and `{"expectVisible": {"role": "img", "name": "The order flow as a line of machines"}}`. The readout `#roast-line-step` reads `Order placed`.
-- **Script.** Steps `{"click": {"role": "img", "name": "The order flow as a line of machines"}}` and `{"expectEval": "document.getElementById('roast-line-step').textContent === 'In stock?'"}`.
-- **Keyboard.** After the script step, run `{"focus": {"role": "button", "name": "Next machine"}}`, `{"press": "Enter"}` and `{"expectEval": "document.getElementById('roast-line-step').textContent === 'Buy green beans'"}`.
+- **Render.** Steps `{"goto": "/diagrams/figure/"}` and `{"expectVisible": {"role": "img", "name": "The order flow as a line of machines"}}`. The readout `.roast-line-step-name` reads `Order placed`.
+- **Script.** Steps `{"click": {"role": "img", "name": "The order flow as a line of machines"}}` and `{"expectEval": "document.querySelector('.roast-line-step-name').textContent === 'In stock?'"}`.
+- **Keyboard.** After the script step, run `{"focus": {"role": "button", "name": "Next machine"}}`, `{"press": "Enter"}` and `{"expectEval": "document.querySelector('.roast-line-step-name').textContent === 'Buy green beans'"}`.
 - **Error.** Run `printf 'throw new Error("no beans");\n' > "$DOCS_VERIFY_RUN/instance/site/docs/diagrams/figures/roast-line.mjs"`, then steps `{"goto": "/diagrams/figure/"}` and `{"expectVisible": {"text": "This figure has an error: the module failed: no beans"}}`. Run `control-docs restore docs/diagrams/figures/roast-line.mjs`.
 - **Proof.** After the script step, run `{"screenshot": "figure-render"}` and `{"aria": "figure-render"}`.
 

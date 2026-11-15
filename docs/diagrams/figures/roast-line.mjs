@@ -9,22 +9,24 @@ const boxes = STEPS.map((label, index) => {
 
 const html = `<figure class="roast-line">
 <svg viewBox="0 0 ${10 + STEPS.length * W} 104" role="img" aria-label="The order flow as a line of machines">${boxes}</svg>
-<figcaption><button type="button" class="roast-line-next">Next machine</button> <output id="roast-line-step" aria-live="polite">${STEPS[0]}</output></figcaption>
+<figcaption><button type="button" class="roast-line-next">Next machine</button> <output class="roast-line-step-name" aria-live="polite">${STEPS[0]}</output></figcaption>
 </figure>`;
 
 const script = `
 const steps = ${JSON.stringify(STEPS)};
-const svg = document.querySelector(".roast-line svg");
-const output = document.getElementById("roast-line-step");
-let current = 0;
-const show = () => {
-  for (const step of svg.querySelectorAll(".roast-line-step")) step.classList.toggle("on", Number(step.dataset.step) === current);
-  output.textContent = steps[current];
-};
-const next = () => { current = (current + 1) % steps.length; show(); };
-svg.addEventListener("click", next);
-document.querySelector(".roast-line-next").addEventListener("click", next);
-show();
+for (const root of document.querySelectorAll(".roast-line:not([data-ready])")) {
+  root.dataset.ready = "";
+  const output = root.querySelector(".roast-line-step-name");
+  let current = 0;
+  const show = () => {
+    for (const step of root.querySelectorAll(".roast-line-step")) step.classList.toggle("on", Number(step.dataset.step) === current);
+    output.textContent = steps[current];
+  };
+  const next = () => { current = (current + 1) % steps.length; show(); };
+  root.querySelector("svg").addEventListener("click", next);
+  root.querySelector(".roast-line-next").addEventListener("click", next);
+  show();
+}
 `;
 
 const css = `

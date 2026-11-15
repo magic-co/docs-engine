@@ -98,7 +98,7 @@ The stable handles of the site:
 - The nav is `navigation "Docs"`. The current page link has `aria-current="page"`.
 - The page body is `main` > `article`. The footer has the `Research` link when `docs/research/` exists.
 - A flow diagram is `figure` > `group "<title>"`. Each node is `docs-flow-node[value=<id>][data-kind=<kind>]` with one `link "<label>"` inside.
-- A figure is `div.docs-figure`. Its content comes from the module, so use the roles and the ids that the module writes, such as `img "The order flow as a line of machines"` and `#roast-line-step`.
+- A figure is `div.docs-figure`. Its content comes from the module, so use the roles and the classes that the module writes, such as `img "The order flow as a line of machines"` and `.roast-line-step-name`.
 - The open hover card is `ui-hover-card-content:not([hidden])`. It holds the kind, the label, the description, the details and a hint.
 - The details table is `table.docs-flow-details`. Each row has the id `<diagram id>-<node id>`, such as `order-flow-roast`.
 
