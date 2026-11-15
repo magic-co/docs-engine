@@ -10,6 +10,8 @@ const TOP = 48;
 const H = 48;
 const MIN_W = 96;
 const LINE = 11;
+const MARGIN = 24;
+const GROUP_PAD = 14;
 
 interface Box {
   x: number;
@@ -26,13 +28,13 @@ interface Placed extends Box {
 }
 
 export function renderFlow(flow: Flow, context: RenderContext): string {
-  const nodes = Object.entries(flow.nodes).map(([id, node]) => place(id, node));
+  const nodes = shiftRight(Object.entries(flow.nodes).map(([id, node]) => place(id, node)));
   const byId = new Map(nodes.map((placed) => [placed.id, placed]));
   const groups = new Map(
     Object.entries(flow.groups ?? {}).map(([id, group]) => [id, { label: group.label, ...groupBox(id, nodes, flow.edges, byId) }]),
   );
-  const width = Math.max(...nodes.map((n) => n.x + n.w), ...[...groups.values()].map((g) => g.x + g.w)) + 24;
-  const height = Math.max(...nodes.map((n) => n.y + n.h), ...[...groups.values()].map((g) => g.y + g.h)) + 24;
+  const width = Math.max(...nodes.map((n) => n.x + n.w), ...[...groups.values()].map((g) => g.x + g.w)) + MARGIN;
+  const height = Math.max(...nodes.map((n) => n.y + n.h), ...[...groups.values()].map((g) => g.y + g.h)) + MARGIN;
   const edges = flow.edges.map((edge) => drawEdge(edge, byId, groups));
   const arrow = context.anchor(`${context.id}-arrow`);
   const rows = new Map(nodes.filter(({ node }) => hasRow(node)).map((placed) => [placed, context.anchor(`${context.id}-${placed.id}`)]));
@@ -66,11 +68,16 @@ function place(id: string, node: FlowNode): Placed {
   return { id, node, w, h: H, cx, cy: y + H / 2, x: cx - w / 2, y };
 }
 
+function shiftRight(nodes: Placed[]): Placed[] {
+  const dx = Math.max(0, MARGIN + GROUP_PAD - Math.min(...nodes.map((n) => n.x)));
+  return dx === 0 ? nodes : nodes.map((n) => ({ ...n, x: n.x + dx, cx: n.cx + dx }));
+}
+
 function groupBox(id: string, nodes: Placed[], edges: FlowEdge[], byId: Map<string, Placed>): Box {
   const members = nodes.filter(({ node }) => node.group === id);
   const sources = edges.flatMap((edge) => (edge.to === id ? (byId.get(edge.from) ?? []) : []));
-  const left = Math.min(...members.map((n) => n.x), ...sources.map((n) => n.cx - 48)) - 14;
-  const right = Math.max(...members.map((n) => n.x + n.w), ...sources.map((n) => n.cx + 48)) + 14;
+  const left = Math.min(...members.map((n) => n.x), ...sources.map((n) => n.cx - 48)) - GROUP_PAD;
+  const right = Math.max(...members.map((n) => n.x + n.w), ...sources.map((n) => n.cx + 48)) + GROUP_PAD;
   const top = Math.min(...members.map((n) => n.y)) - 34;
   const bottom = Math.max(...members.map((n) => n.y + n.h)) + 18;
   return { x: left, y: top, w: right - left, h: bottom - top };

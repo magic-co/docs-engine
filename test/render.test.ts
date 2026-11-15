@@ -38,6 +38,13 @@ describe("flow render", () => {
     expect(page).toContain(`<a href="#${row}">Roast batch</a>`);
   });
 
+  it("keeps a wide node at column 0 and its group inside the drawing", () => {
+    const wide = "title: T\nnodes:\n  a: { label: Weigh the green beans for the batch, kind: step, at: [0, 0], group: g }\n  b: { label: B, kind: end, at: [1, 0] }\ngroups:\n  g: { label: G }\nedges: [ { from: a, to: b } ]";
+    const page = html({ "docs/orders/flow.md": `# Orders\n\n\`\`\`yaml flow\n${wide}\n\`\`\`\n` });
+    expect(page).toContain("<docs-flow-node");
+    expect(page).not.toMatch(/left:-|x="-/);
+  });
+
   it("shows a diagram error in the page instead of failing", () => {
     const page = html({ "docs/orders/flow.md": "# Orders\n\n```yaml flow\ntitle: T\nnodes: { a: { label: A, kind: step, at: [0, 0] } }\nedges: [ { from: a, to: nowhere } ]\n```\n" });
     expect(page).toContain('class="docs-diagram-error"');
