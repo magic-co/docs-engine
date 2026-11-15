@@ -46,6 +46,6 @@ Preconditions:
 - The order of the findings is by file, not by rule. Assert each line, not the order.
 - A hash of the wrong length gives a different message: "the generated mark must be ...". Use 64 hex digits to test the hash check.
 - A missing top-level file also gives `code-paths` and `links` errors for each mention of it. The `layout` line is the root cause. The other lines are correct.
-- The summary line does not use the singular: one error prints `docs: 1 errors`. Assert the number, not the grammar.
+- The summary line uses the singular for a count of one: `docs: 1 error, 1 warning`.
 - The `glossary` rule counts places by file and line. Two mentions on one line are one place. A capitalized word right after the start of a sentence joins the first word, such as "The Kiln", and the rule skips it. Put each mention on its own line, after a lowercase word.
 - The `glossary` rule only warns. The baseline has some warnings, so do not expect an empty stdout.
