@@ -128,6 +128,12 @@ cmd_restore() {
   local path
   for path in "$@"; do
     case "$path" in /*|..|../*|*/..|*/../*) die "give a path inside the site copy, not $path" ;; esac
+    # rm -rf follows a symlink in a parent folder, so refuse a path under one.
+    local parent="$path"
+    while [ "$parent" != "." ] && [ "$parent" != "/" ]; do
+      parent="$(dirname "$parent")"
+      [ "$parent" = "." ] || [ ! -L "$SITE/$parent" ] || die "$parent is a symlink in the site copy. Restore it first."
+    done
     rm -rf "${SITE:?}/$path"
     if [ -e "$RUN/instance/baseline/$path" ]; then
       mkdir -p "$(dirname "$SITE/$path")"
