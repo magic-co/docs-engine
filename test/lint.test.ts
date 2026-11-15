@@ -65,6 +65,31 @@ describe("lint", () => {
     expect(found[0]?.line).toBe(3);
   });
 
+  it("diagrams: reports a type name that only an object prototype has as unknown", () => {
+    expect(findings({ "docs/orders/a.md": "# A\n\n```yaml constructor\na: 1\n```\n" })).toEqual([
+      { rule: "diagrams", severity: "error", file: "docs/orders/a.md", line: 3 },
+    ]);
+  });
+
+  it("diagrams: reports an alias to a missing anchor", () => {
+    expect(findings({ "docs/orders/a.md": flow("title: T\nnodes:\n  a: *missing\nedges: []") })).toEqual([
+      { rule: "diagrams", severity: "error", file: "docs/orders/a.md", line: 3 },
+    ]);
+  });
+
+  it("diagrams: does not take an inherited name such as toString for a node or a group", () => {
+    const messages = (body: string) => lint(loadSite(repo({ "docs/orders/a.md": flow(body) }))).map((finding) => finding.message);
+    expect(messages(`${NODES}\nedges: [ { from: toString, to: b } ]`)).toEqual([expect.stringContaining("`toString`")]);
+    expect(messages(`${NODES}\nedges: [ { from: a, to: constructor } ]`)).toEqual([expect.stringContaining("`constructor`")]);
+  });
+
+  it("diagrams: finds two nodes in one cell when a node id is empty", () => {
+    const body = "title: T\nnodes:\n  '': { label: A, kind: start, at: [0, 0] }\n  b: { label: B, kind: end, at: [0, 0] }\nedges: []";
+    expect(lint(loadSite(repo({ "docs/orders/a.md": flow(body) }))).map((finding) => finding.message)).toEqual([
+      expect.stringContaining("the same cell [0,0]"),
+    ]);
+  });
+
   it("generated: passes an intact page and fails an edited one", () => {
     const intact = generatedPage("roast-log", "# Roast log\n\nBatch 12.\n");
     expect(findings({ "docs/orders/log.md": intact })).toEqual([]);
