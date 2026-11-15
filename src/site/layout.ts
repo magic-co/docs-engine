@@ -16,6 +16,7 @@ export interface Area {
 }
 
 export const DOCS_DIR = "docs";
+export const ASSETS_DIR = "assets";
 
 export const LAYOUT: readonly Area[] = [
   { name: "home", place: { kind: "file", path: "README.md", route: "/" }, visibility: "nav", required: true },

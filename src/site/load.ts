@@ -55,6 +55,7 @@ function routeOf(path: RepoPath, area: Area): Route | undefined {
   const file = segments.pop() ?? "";
   const parts = segments.map(stripOrder);
   if (!SECTION_FILES.has(file)) parts.push(stripOrder(file.replace(/\.md$/, "")));
+  if (parts.some((part) => part === "" || part === "." || part === "..")) return undefined;
   return `/${parts.map((part) => `${part}/`).join("")}` as Route;
 }
 

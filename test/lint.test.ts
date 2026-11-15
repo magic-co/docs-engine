@@ -1,3 +1,5 @@
+import { rmSync, writeFileSync } from "node:fs";
+import { basename, dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { type Files, repo } from "./fixture.ts";
 import { generatedPage } from "../src/generated.ts";
@@ -48,6 +50,33 @@ describe("lint", () => {
       { rule: "links", severity: "error", file: "docs/guides/cupping.md", line: 3 },
       { rule: "links", severity: "error", file: "docs/guides/cupping.md", line: 3 },
       { rule: "links", severity: "error", file: "docs/guides/cupping.md", line: 5 },
+    ]);
+  });
+
+  it("routes: reports each source of a route that two sources share", () => {
+    const messages = (changes: Files) => lint(loadSite(repo(changes))).map(({ rule, file, message }) => [rule, file, message]);
+    expect(messages({ "docs/guides/index.md": "# Guides too\n", "docs/guides/setup.md": "# Set up\n", "docs/guides/01-setup.md": "# Set up first\n" })).toEqual([
+      ["routes", "docs/guides/01-setup.md", "the route `/guides/setup/` is also the route of `docs/guides/setup.md`"],
+      ["routes", "docs/guides/index.md", "the route `/guides/` is also the route of `docs/guides/README.md`"],
+      ["routes", "docs/guides/README.md", "the route `/guides/` is also the route of `docs/guides/index.md`"],
+      ["routes", "docs/guides/setup.md", "the route `/guides/setup/` is also the route of `docs/guides/01-setup.md`"],
+    ]);
+  });
+
+  it("routes: reports a name that gives an empty, `.` or `..` route segment, and gives the page no route", () => {
+    const changes = { "docs/01-../README.md": "# Up\n", "docs/guides/..md": "# Dot\n", "docs/7-/a.md": "# Empty\n" };
+    expect(findings(changes)).toEqual([
+      { rule: "routes", severity: "error", file: "docs/01-../README.md", line: undefined },
+      { rule: "routes", severity: "error", file: "docs/7-/a.md", line: undefined },
+      { rule: "routes", severity: "error", file: "docs/guides/..md", line: undefined },
+    ]);
+    expect([...loadSite(repo(changes)).routes.keys()].filter((route) => /\/\.{0,2}\//.test(route.slice(1)))).toEqual([]);
+  });
+
+  it("routes: reserves /assets/ for the client files of the build", () => {
+    expect(findings({ "docs/assets/README.md": "# Assets\n", "docs/assets/logo.md": "# Logo\n" })).toEqual([
+      { rule: "routes", severity: "error", file: "docs/assets/logo.md", line: undefined },
+      { rule: "routes", severity: "error", file: "docs/assets/README.md", line: undefined },
     ]);
   });
 
