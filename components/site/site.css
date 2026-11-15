@@ -6,9 +6,11 @@
   --ink: #2d3142;
   --muted: #4f5d75;
   --soft: #7a8399;
+  --soft-text: #5f6880;
   --rule: rgba(45, 49, 66, 0.12);
   --rule-solid: #bfc0c0;
   --accent: #eb6c36;
+  --accent-text: #a14818;
   --accent-tint: rgba(235, 108, 54, 0.08);
   --link: #2e5aa8;
   --sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -32,7 +34,7 @@ a:hover { text-decoration-thickness: 2px; }
 .docs-nav li { margin: 0; }
 .docs-nav a, .docs-nav-section { display: block; padding: 4px 8px; border-radius: 4px; color: var(--muted); text-decoration: none; }
 .docs-nav a:hover { background: var(--paper-2); color: var(--ink); }
-.docs-nav .docs-nav-section { margin-top: 12px; color: var(--soft); font: 500 11px/1.6 var(--mono); letter-spacing: 0.14em; text-transform: uppercase; }
+.docs-nav .docs-nav-section { margin-top: 12px; color: var(--soft-text); font: 500 11px/1.6 var(--mono); letter-spacing: 0.14em; text-transform: uppercase; }
 .docs-nav ul ul .docs-nav-section { margin-top: 4px; }
 .docs-nav a.docs-nav-section:hover { color: var(--ink); }
 .docs-nav a[aria-current="page"] { background: var(--card); color: var(--ink); box-shadow: inset 2px 0 0 var(--accent); }
@@ -55,7 +57,7 @@ a:hover { text-decoration-thickness: 2px; }
 .docs-page hr { margin: 32px 0; border: 0; border-top: 1px solid var(--rule); }
 
 .docs-footer { max-width: 820px; margin-top: 56px; padding-top: 14px; border-top: 1px solid var(--rule); font: 12px var(--mono); }
-.docs-footer a { color: var(--soft); }
+.docs-footer a { color: var(--soft-text); }
 
 .docs-diagram-error { margin: 0 0 20px; padding: 12px 16px; border: 1px solid var(--accent); border-radius: 6px; background: var(--accent-tint); }
 .docs-diagram-error p { margin: 0 0 6px; font-weight: 600; }

@@ -1,13 +1,13 @@
 /* Parts of this file derive from diagram-design, Copyright (c) 2025 Cathryn Lavery, MIT License. See THIRD_PARTY_NOTICES.md. */
 .docs-flow-figure { margin: 8px 0 20px; padding: 16px 16px 12px; border: 1px solid var(--rule); border-radius: 8px; background: var(--card); }
-.docs-flow-figure figcaption { margin-bottom: 8px; color: var(--soft); font: 500 11px var(--mono); letter-spacing: 0.14em; text-transform: uppercase; }
+.docs-flow-figure figcaption { margin-bottom: 8px; color: var(--soft-text); font: 500 11px var(--mono); letter-spacing: 0.14em; text-transform: uppercase; }
 .docs-flow-scroll { overflow-x: auto; }
 docs-flow { position: relative; display: block; width: 100%; min-width: calc(var(--w) * 0.6px); max-width: calc(var(--w) * 1px); container-type: inline-size; }
 docs-flow > svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 docs-flow marker polygon { fill: var(--muted); }
 .docs-flow-group { fill: rgba(45, 49, 66, 0.03); stroke: var(--rule-solid); stroke-dasharray: 4, 3; rx: 8; }
 .docs-flow-group-label, .docs-flow-edge-labels text { font-family: var(--mono); font-size: 9px; letter-spacing: 0.06em; fill: var(--muted); }
-.docs-flow-group-label { letter-spacing: 0.14em; fill: var(--soft); }
+.docs-flow-group-label { letter-spacing: 0.14em; fill: var(--soft-text); }
 .docs-flow-edge-labels { text-anchor: middle; }
 .docs-flow-edge-labels rect { fill: var(--card); }
 .docs-flow-edges { fill: none; stroke: var(--muted); stroke-width: 1; }
@@ -42,12 +42,12 @@ ui-hover-card-arrow { width: 10px; height: 10px; border: 1px solid var(--ink); b
 ui-hover-card-arrow[data-side="bottom"] { top: -6px; border-right: 0; border-bottom: 0; }
 ui-hover-card-arrow[data-side="top"] { bottom: -6px; border-top: 0; border-left: 0; }
 ui-hover-card-content p { margin: 0 0 4px; }
-ui-hover-card-content .docs-card-kind { margin: 0; color: var(--soft); font: 500 10px var(--mono); letter-spacing: 0.14em; text-transform: uppercase; }
+ui-hover-card-content .docs-card-kind { margin: 0; color: var(--soft-text); font: 500 10px var(--mono); letter-spacing: 0.14em; text-transform: uppercase; }
 ui-hover-card-content .docs-card-title { margin: 0 0 8px; font-size: 17px; font-weight: 600; }
 ui-hover-card-content dl, .docs-flow-details dl { margin: 0; }
-ui-hover-card-content dt, .docs-flow-details dt { margin-top: 6px; color: var(--accent); font: 500 10px var(--mono); letter-spacing: 0.1em; text-transform: uppercase; }
+ui-hover-card-content dt, .docs-flow-details dt { margin-top: 6px; color: var(--accent-text); font: 500 10px var(--mono); letter-spacing: 0.1em; text-transform: uppercase; }
 ui-hover-card-content dd, .docs-flow-details dd { margin: 0 0 4px; }
-ui-hover-card-content .docs-card-hint { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--rule); color: var(--soft); font: 10px var(--mono); }
+ui-hover-card-content .docs-card-hint { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--rule); color: var(--soft-text); font: 10px var(--mono); }
 
 .docs-flow-connections { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
@@ -59,7 +59,7 @@ ui-hover-card-content .docs-card-hint { margin-top: 10px; padding-top: 8px; bord
 .docs-flow-legend i[data-kind="decision"] { width: 12px; transform: rotate(45deg) scale(0.8); border-radius: 0; }
 .docs-flow-legend i[data-kind="group"] { border: 1px dashed var(--rule-solid); background: rgba(45, 49, 66, 0.03); }
 .docs-flow-legend i.docs-legend-dash { width: 32px; height: 0; border: 0; border-top: 1px dashed var(--muted); border-radius: 0; vertical-align: middle; }
-.docs-flow-keys { margin-left: auto; color: var(--soft); }
+.docs-flow-keys { margin-left: auto; color: var(--soft-text); }
 
 .docs-flow-details td:first-child { font-weight: 600; white-space: nowrap; }
 .docs-flow-details tr:target td { background: var(--accent-tint); transition: background 0.3s; }
