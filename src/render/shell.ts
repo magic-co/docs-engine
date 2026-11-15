@@ -41,5 +41,5 @@ function navLabel(node: NavNode, current: Route | undefined): string {
   if (!node.route) return `<span class="docs-nav-section">${esc(node.title)}</span>`;
   const here = node.route === current ? ' aria-current="page"' : "";
   const kind = node.children.length > 0 ? ' class="docs-nav-section"' : "";
-  return `<a href="${node.route}"${kind}${here}>${esc(node.title)}</a>`;
+  return `<a href="${esc(node.route)}"${kind}${here}>${esc(node.title)}</a>`;
 }

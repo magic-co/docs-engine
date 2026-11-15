@@ -55,6 +55,10 @@ describe("page render", () => {
     expect(page).toMatch(/<footer class="docs-footer"><a href="\/research\/">Research<\/a><\/footer>/);
   });
 
+  it("escapes a route in the nav", () => {
+    expect(html({ "docs/guides/a&b.md": "# Beans and brew\n" }, "/guides/")).toContain('<a href="/guides/a&amp;b/">Beans and brew</a>');
+  });
+
   it("redirects a route without its trailing slash and answers 404 for an unknown route", () => {
     const site = loadSite(repo());
     expect(respond(site, "/guides", "")).toEqual({ status: 301, location: "/guides/" });
