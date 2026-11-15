@@ -10,8 +10,8 @@ const EXTENSIONS = new Set(
 
 export function looksLikePath(text: string): boolean {
   if (text === "" || /\s/.test(text) || /[<*{}()]/.test(text)) return false;
-  if (text.startsWith("@") || text.startsWith("-") || /^[a-z][a-z\d+.-]*:/i.test(text)) return false;
-  if (text.includes("/")) return !text.startsWith("//") && text !== "/";
+  if (/^[@\-/]/.test(text) || /^[a-z][a-z\d+.-]*:/i.test(text)) return false;
+  if (text.includes("/")) return true;
   const extension = /\.([A-Za-z\d]+)$/.exec(text)?.[1];
   return extension !== undefined && text.length > extension.length + 1 && EXTENSIONS.has(extension.toLowerCase());
 }

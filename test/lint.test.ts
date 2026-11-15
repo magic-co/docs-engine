@@ -96,6 +96,7 @@ describe("looksLikePath", () => {
     ["docs dev", false],
     ["@scope/pkg", false],
     ["--port", false],
+    ["/guides/setup/", false],
     ["https://example.com/a.md", false],
     ["docs/<folder>/**", false],
     ["src/**/*.ts", false],
