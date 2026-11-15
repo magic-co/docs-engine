@@ -1,0 +1,95 @@
+import { describe, expect, it } from "vitest";
+import { lint, loadSite } from "../src/index.ts";
+import { figureText } from "../src/diagrams/figure/text.ts";
+import { respond } from "../src/render/site.ts";
+import { type Files, repo } from "./fixture.ts";
+
+const DRAWN = `<figure><svg aria-label="Order placed, then Roast batch"><text>Pack</text><text>bag</text></svg><figcaption>We Ship &amp; done.</figcaption></figure>`;
+const MODULE = `export default { html: ${JSON.stringify(DRAWN)}, script: "window.drawn = 1;", css: ".shop { color: red }" };\n`;
+
+const page = (block: string) => `# Shop\n\n\`\`\`yaml figure\n${block}\n\`\`\`\n`;
+
+function figureFindings(changes: Files) {
+  return lint(loadSite(repo(changes)))
+    .filter((finding) => finding.rule === "figures" || finding.rule === "diagrams")
+    .map(({ rule, file, line, message }) => ({ rule, file, line, message }));
+}
+
+describe("figure", () => {
+  it("passes when the figure shows each node label of its source flow", () => {
+    expect(figureFindings({ "figures/shop.mjs": MODULE, "docs/orders/shop.md": page("module: ../../figures/shop.mjs\nsource: flow.md#order-flow") })).toEqual([]);
+  });
+
+  it("finds a label of the source flow that the figure does not show", () => {
+    const missing = MODULE.replace("Roast batch", "Roast");
+    expect(figureFindings({ "figures/shop.mjs": missing, "docs/orders/shop.md": page("module: figures/shop.mjs\nsource: flow.md#order-flow") })).toEqual([
+      {
+        rule: "figures",
+        file: "docs/orders/shop.md",
+        line: 3,
+        message: 'the figure does not show "Roast batch" from its source `flow.md#order-flow`. Draw it, or change the source.',
+      },
+    ]);
+  });
+
+  it("finds a source that names no flow, and a source file that is missing", () => {
+    const found = figureFindings({
+      "figures/shop.mjs": MODULE,
+      "docs/orders/a.md": page("module: figures/shop.mjs\nsource: flow.md#nope"),
+      "docs/orders/b.md": page("module: figures/shop.mjs\nsource: data/stock.yaml"),
+    });
+    expect(found.map((finding) => finding.message)).toEqual([
+      "the source `flow.md#nope` names no flow diagram. Use the id of the flow: the slug of its title",
+      "the source `data/stock.yaml` does not exist in the repo",
+    ]);
+  });
+
+  it("accepts a source file that exists, and an illustration with no source", () => {
+    expect(
+      figureFindings({
+        "figures/shop.mjs": MODULE,
+        "data/stock.yaml": "beans: 3\n",
+        "docs/orders/a.md": page("module: figures/shop.mjs\nsource: data/stock.yaml"),
+        "docs/orders/b.md": page("module: figures/shop.mjs\nillustration: true"),
+      }),
+    ).toEqual([]);
+  });
+
+  it("needs exactly one of source and illustration", () => {
+    const found = figureFindings({
+      "figures/shop.mjs": MODULE,
+      "docs/orders/a.md": page("module: figures/shop.mjs"),
+      "docs/orders/b.md": page("module: figures/shop.mjs\nsource: data/x.yaml\nillustration: true"),
+    });
+    expect(found.map(({ rule, message }) => ({ rule, message }))).toEqual([
+      { rule: "diagrams", message: "a figure needs a `source`, or `illustration: true` when it states no facts" },
+      { rule: "diagrams", message: "a figure has a `source` or `illustration: true`, not both" },
+    ]);
+  });
+
+  it("finds a missing module and a module that fails", () => {
+    const found = figureFindings({
+      "figures/bad.mjs": 'throw new Error("no beans");\n',
+      "figures/empty.mjs": "export default { script: 'x' };\n",
+      "docs/orders/a.md": page("module: figures/gone.mjs\nillustration: true"),
+      "docs/orders/b.md": page("module: figures/bad.mjs\nillustration: true"),
+      "docs/orders/c.md": page("module: figures/empty.mjs\nillustration: true"),
+    });
+    expect(found.map((finding) => finding.message)).toEqual([
+      "the module `figures/gone.mjs` does not exist in the repo",
+      "the module failed: no beans",
+      "the module failed: the default export has no html string",
+    ]);
+  });
+
+  it("renders the html, the css and the script of the module", () => {
+    const result = respond(loadSite(repo({ "figures/shop.mjs": MODULE, "docs/orders/shop.md": page("module: figures/shop.mjs\nillustration: true") })), "/orders/shop/", "");
+    if (result.status !== 200) throw new Error("no page");
+    expect(result.html).toContain(`<div class="docs-figure" id="figure-diagram"><style>.shop { color: red }</style>${DRAWN}<script type="module">window.drawn = 1;</script></div>`);
+  });
+
+  it("reads the text, the labels and the entities of the html", () => {
+    expect(figureText(DRAWN)).toBe("Pack bag We Ship & done. Order placed, then Roast batch");
+    expect(figureText(`<p>a<script>no</script><style>no</style> b</p>`)).toBe("a b");
+  });
+});

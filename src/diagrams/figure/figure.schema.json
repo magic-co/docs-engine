@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "A figure: a drawing that a module in the repo makes, tied to its source",
+  "type": "object",
+  "required": ["module"],
+  "additionalProperties": false,
+  "properties": {
+    "module": {
+      "description": "The path of a JavaScript module, relative to the page or to the repo root. Its default export is { html, script?, css? }.",
+      "type": "string",
+      "minLength": 1
+    },
+    "source": {
+      "description": "What the figure draws: `#<flow id>` or `<page>.md#<flow id>` for a flow diagram, or the path of a file.",
+      "type": "string",
+      "minLength": 1
+    },
+    "illustration": {
+      "description": "true when the figure states no facts, so it has no source.",
+      "const": true
+    }
+  }
+}

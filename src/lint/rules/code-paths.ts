@@ -1,7 +1,7 @@
-import { existsSync } from "node:fs";
-import { isAbsolute, join, matchesGlob, posix, relative, sep } from "node:path";
+import { matchesGlob } from "node:path";
 import type { InlineCode } from "mdast";
 import { visit } from "unist-util-visit";
+import { repoFile } from "../../site/files.ts";
 import type { Rule } from "../types.ts";
 
 const EXTENSIONS = new Set(
@@ -24,18 +24,13 @@ export const codePaths: Rule = {
   severity: "error",
   check(site) {
     const ignored = (path: string) => site.config.lint.ignorePaths.some((glob) => matchesGlob(path, glob));
-    const inRepo = (candidate: string) => {
-      const path = relative(site.root, candidate);
-      return path !== ".." && !path.startsWith(`..${sep}`) && !isAbsolute(path) && existsSync(candidate);
-    };
     return [...site.pages.values()].flatMap((page) => {
       const found: { file: string; line: number; message: string }[] = [];
       visit(page.tree, "inlineCode", (node: InlineCode) => {
         if (!looksLikePath(node.value)) return;
         const path = node.value.replace(LINE_SUFFIX, "");
         if (ignored(path)) return;
-        const candidates = [join(site.root, path), join(site.root, posix.dirname(page.path), path)];
-        if (!candidates.some(inRepo)) {
+        if (!repoFile(site.root, page.path, path)) {
           found.push({ file: page.path, line: node.position?.start.line ?? 1, message: `\`${node.value}\` does not exist in the repo` });
         }
       });

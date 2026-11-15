@@ -27,6 +27,7 @@ The engine reads "nothing else at the top of `docs/`" like this: each page is in
 | `links` | error | Each relative link goes to a file that exists. Each link to a heading goes to a heading that exists. The rule does not check `http:`, `https:` or `mailto:` links. |
 | `code-paths` | error | Each inline code span that looks like a repo path exists. |
 | `diagrams` | error | Each diagram block parses, has a known type, passes the schema of its type and passes the check of its type. |
+| `figures` | error | Each figure module exists and runs. Each figure shows each fact of its source. See [the figure](../diagrams/figure.md#the-source). |
 | `generated` | error | Each generated page has a correct mark and a hash that matches. |
 | `glossary` | warning | A capitalized term that shows in two or more places is in `GLOSSARY.md`. |
 
