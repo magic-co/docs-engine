@@ -61,7 +61,11 @@ function parsePort(text: string | undefined): number {
 function report(findings: Finding[]): void {
   for (const finding of findings) console.log(formatFinding(finding));
   const errors = findings.filter((finding) => finding.severity === "error").length;
-  if (findings.length > 0) console.log(`docs: ${errors} errors, ${findings.length - errors} warnings`);
+  if (findings.length > 0) console.log(`docs: ${count(errors, "error")}, ${count(findings.length - errors, "warning")}`);
+}
+
+function count(n: number, noun: string): string {
+  return `${n} ${noun}${n === 1 ? "" : "s"}`;
 }
 
 main(process.argv.slice(2)).then(

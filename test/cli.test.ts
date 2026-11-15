@@ -46,6 +46,7 @@ describe("docs CLI", () => {
     const broken = docs("lint", "--root", repo({ "docs/guides/cupping.md": "# Taste\n\n[gone](gone.md)\n" }));
     expect(broken.status).toBe(1);
     expect(broken.stdout).toContain("docs/guides/cupping.md:3 links ");
+    expect(broken.stdout).toContain("docs: 1 error, 0 warnings");
   });
 
   it("build writes the HTML pages and the client assets", () => {
