@@ -13,6 +13,10 @@ export const routes: Rule = {
       else if (page.area.visibility !== "hidden") {
         found.push({ file: page.path, message: "a folder or file name gives an empty, `.` or `..` route segment: rename it" });
       }
+      const segments = page.route?.split("/").filter(Boolean) ?? [];
+      if (segments.includes("index.html") || segments[0] === "404.html") {
+        found.push({ file: page.path, message: "a folder or file name gives the route segment `index.html` or a first segment `404.html`, which are files of the build: rename it" });
+      }
       if (page.route?.startsWith(`/${ASSETS_DIR}/`)) {
         found.push({ file: page.path, message: `the route \`/${ASSETS_DIR}/\` holds the client files of the build: rename the folder` });
       }
