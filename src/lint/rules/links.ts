@@ -22,7 +22,8 @@ export const links: Rule = {
         const target = resolveLink(site, page, url);
         if (target.kind === "external") return;
         const line = position?.start.line ?? 1;
-        if (!target.exists) found.push({ file: page.path, line, message: `\`${url}\`: \`${target.path}\` does not exist` });
+        if (target.kind === "malformed") found.push({ file: page.path, line, message: `\`${url}\` has malformed percent-encoding` });
+        else if (!target.exists) found.push({ file: page.path, line, message: `\`${url}\`: \`${target.path}\` does not exist` });
         else if (target.anchor && target.page && !anchorsOf(target.page).has(target.anchor)) {
           found.push({ file: page.path, line, message: `\`${url}\`: \`${target.page.path}\` has no heading \`#${target.anchor}\`` });
         }

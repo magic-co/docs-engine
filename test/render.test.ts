@@ -45,6 +45,10 @@ describe("page render", () => {
     expect(html({}, "/guides/roasting/")).toContain('<h2 id="cool-the-beans">Cool the beans</h2>');
   });
 
+  it("renders a page with a malformed percent-encoded link", () => {
+    expect(html({ "docs/guides/cupping.md": "# Taste\n\n[bad](#%)\n" }, "/guides/cupping/")).toContain('<a href="#%25">bad</a>');
+  });
+
   it("marks the current page in the nav and links research in the footer", () => {
     const page = html({}, "/guides/");
     expect(page).toContain('<a href="/guides/" class="docs-nav-section" aria-current="page">Guides</a>');

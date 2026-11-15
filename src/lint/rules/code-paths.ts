@@ -8,7 +8,10 @@ const EXTENSIONS = new Set(
   "md mdx json jsonc yaml yml toml ts tsx mts cts js jsx mjs cjs css scss html svg png jpg jpeg gif webp txt sh py rb go rs sql lock env".split(" "),
 );
 
-export function looksLikePath(text: string): boolean {
+const LINE_SUFFIX = /:\d+(:\d+)?$/;
+
+export function looksLikePath(code: string): boolean {
+  const text = code.replace(LINE_SUFFIX, "");
   if (text === "" || /\s/.test(text) || /[<*{}()]/.test(text)) return false;
   if (/^[@\-/]/.test(text) || /^[a-z][a-z\d+.-]*:/i.test(text)) return false;
   if (text.includes("/")) return true;
@@ -25,7 +28,7 @@ export const codePaths: Rule = {
       const found: { file: string; line: number; message: string }[] = [];
       visit(page.tree, "inlineCode", (node: InlineCode) => {
         if (!looksLikePath(node.value) || ignored(node.value)) return;
-        const path = node.value.replace(/:\d+(:\d+)?$/, "");
+        const path = node.value.replace(LINE_SUFFIX, "");
         const candidates = [join(site.root, path), join(site.root, posix.dirname(page.path), path)];
         if (!candidates.some((candidate) => existsSync(candidate))) {
           found.push({ file: page.path, line: node.position?.start.line ?? 1, message: `\`${node.value}\` does not exist in the repo` });

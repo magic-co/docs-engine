@@ -48,7 +48,7 @@ function diagramError(type: string, problems: Problem[], source: string): string
 
 function linkHref(site: Site, page: Page, url: string): string {
   const target = resolveLink(site, page, url);
-  if (target.kind === "external" || !target.page?.route) return url;
+  if (target.kind !== "local" || !target.page?.route) return url;
   const anchor = target.anchor ? `#${target.anchor}` : "";
   return target.page === page && anchor ? anchor : `${target.page.route}${anchor}`;
 }
