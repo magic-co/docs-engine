@@ -40,7 +40,7 @@ A figure that states facts must name its source, so that the drawing and the fac
 - `#<flow id>` or `<page>.md#<flow id>` names a flow diagram. The flow id is the slug of the flow title, such as `order-flow` for "Order flow". The figure must show the label of each node of the flow. The rule reads the text of the HTML and the `aria-label`, `title` and `alt` values.
 - Any other path names a file, such as a YAML file that the module reads. The file must exist in the repo.
 
-When the source changes, the lint fails until the figure shows the new facts.
+When the source flow gets a node label that the figure does not show, the lint fails until the figure shows it. The lint does not find other changes, such as a new edge or a changed order. For a file source, the lint checks only that the file exists.
 
 ## Checks
 

@@ -1,10 +1,14 @@
-const ENTITIES: Record<string, string> = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " " };
+import { decodeNamedCharacterReference } from "decode-named-character-reference";
+
+function codePoint(value: number): string {
+  return value > 0x10ffff || (value >= 0xd800 && value <= 0xdfff) ? "\uFFFD" : String.fromCodePoint(value);
+}
 
 function decode(text: string): string {
-  return text.replace(/&(#x[\da-f]+|#\d+|[a-z]+);/gi, (whole, name: string) => {
-    if (name.startsWith("#x") || name.startsWith("#X")) return String.fromCodePoint(Number.parseInt(name.slice(2), 16));
-    if (name.startsWith("#")) return String.fromCodePoint(Number(name.slice(1)));
-    return ENTITIES[name.toLowerCase()] ?? whole;
+  return text.replace(/&(#x[\da-f]+|#\d+|[a-z][a-z\d]*);/gi, (whole, name: string) => {
+    if (/^#x/i.test(name)) return codePoint(Number.parseInt(name.slice(2), 16));
+    if (name.startsWith("#")) return codePoint(Number(name.slice(1)));
+    return decodeNamedCharacterReference(name) || whole;
   });
 }
 

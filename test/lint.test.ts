@@ -131,7 +131,7 @@ describe("lint", () => {
   });
 
   it("code-paths: finds a bare file name anywhere in the repo, and skips home paths", () => {
-    const page = "# Taste\n\nSee `cupping.md`, `01-roasting.md`, `~/.roaster/config.json` and `gone.md`.\n";
+    const page = "# Taste\n\nSee `cupping.md`, `bean-sources.md`, `~/.roaster/config.json` and `gone.md`.\n";
     expect(findings({ "docs/guides/cupping.md": page }).map(({ line }) => line)).toEqual([3]);
     const found = lint(loadSite(repo({ "docs/guides/cupping.md": page }))).filter(({ rule }) => rule === "code-paths");
     expect(found.map(({ message }) => message)).toEqual(["`gone.md` does not exist in the repo"]);

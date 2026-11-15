@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { lint, loadSite } from "../src/index.ts";
 import { figureText } from "../src/diagrams/figure/text.ts";
 import { respond } from "../src/render/site.ts";
-import { type Files, repo } from "./fixture.ts";
+import { CLEAN, type Files, repo } from "./fixture.ts";
 
 const DRAWN = `<figure><svg aria-label="Order placed, then Roast batch"><text>Pack</text><text>bag</text></svg><figcaption>We Ship &amp; done.</figcaption></figure>`;
 const MODULE = `export default { html: ${JSON.stringify(DRAWN)}, script: "window.drawn = 1;", css: ".shop { color: red }" };\n`;
@@ -55,6 +55,24 @@ describe("figure", () => {
     ).toEqual([]);
   });
 
+  it("reads the result when the module prints to stdout", () => {
+    const noisy = `console.log("loading the shop");\n${MODULE}`;
+    expect(figureFindings({ "figures/shop.mjs": noisy, "docs/orders/shop.md": page("module: figures/shop.mjs\nsource: flow.md#order-flow") })).toEqual([]);
+  });
+
+  it("finds the source flow by the id that the page gives it", () => {
+    const flowPage = (heading: string) => `# Orders\n\n## ${heading}\n\n${CLEAN["docs/orders/flow.md"]?.split("\n\n").slice(1).join("\n\n")}`;
+    const changes = (heading: string, anchor: string) => ({
+      "figures/shop.mjs": MODULE,
+      "docs/orders/flow.md": flowPage(heading),
+      "docs/orders/shop.md": page(`module: figures/shop.mjs\nsource: flow.md#${anchor}`),
+    });
+    expect(figureFindings(changes("Order flow", "order-flow-1"))).toEqual([]);
+    expect(figureFindings(changes("Order flow", "order-flow")).map(({ message }) => message)).toEqual([
+      "the source `flow.md#order-flow` names no flow diagram. Use the id of the flow: the slug of its title",
+    ]);
+  });
+
   it("needs exactly one of source and illustration", () => {
     const found = figureFindings({
       "figures/shop.mjs": MODULE,
@@ -91,5 +109,6 @@ describe("figure", () => {
   it("reads the text, the labels and the entities of the html", () => {
     expect(figureText(DRAWN)).toBe("Pack bag We Ship & done. Order placed, then Roast batch");
     expect(figureText(`<p>a<script>no</script><style>no</style> b</p>`)).toBe("a b");
+    expect(figureText(`<p>Roast&hellip; &eacute;&#x110000;&#xD800; &constructor; &nope;</p>`)).toBe("Roast\u2026 \u00e9\uFFFD\uFFFD &constructor; &nope;");
   });
 });

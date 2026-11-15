@@ -9,7 +9,7 @@ const boxes = STEPS.map((label, index) => {
 
 const html = `<figure class="roast-line">
 <svg viewBox="0 0 ${10 + STEPS.length * W} 104" role="img" aria-label="The order flow as a line of machines">${boxes}</svg>
-<figcaption>Click the line to light the next machine. <output id="roast-line-step">${STEPS[0]}</output></figcaption>
+<figcaption><button type="button" class="roast-line-next">Next machine</button> <output id="roast-line-step" aria-live="polite">${STEPS[0]}</output></figcaption>
 </figure>`;
 
 const script = `
@@ -21,7 +21,9 @@ const show = () => {
   for (const step of svg.querySelectorAll(".roast-line-step")) step.classList.toggle("on", Number(step.dataset.step) === current);
   output.textContent = steps[current];
 };
-svg.addEventListener("click", () => { current = (current + 1) % steps.length; show(); });
+const next = () => { current = (current + 1) % steps.length; show(); };
+svg.addEventListener("click", next);
+document.querySelector(".roast-line-next").addEventListener("click", next);
 show();
 `;
 
@@ -31,6 +33,7 @@ const css = `
 .roast-line text { font: 10px system-ui, sans-serif; text-anchor: middle; fill: #2b1d12; }
 .roast-line .on rect { fill: #6b4f3a; }
 .roast-line .on text { fill: #fff; }
+.roast-line-next { font: inherit; margin-right: 0.5em; }
 `;
 
 export default { html, script, css };

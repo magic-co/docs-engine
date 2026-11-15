@@ -11,7 +11,7 @@ A `yaml figure` block runs a JavaScript module of the repo and puts its drawing 
 ## How to get to it (user POV)
 
 - Open a page with a `yaml figure` block. In this repo it is `/diagrams/figure/`, "The figure", in the Diagrams section.
-- Click the drawing of the roast line. The readout under it names the next machine.
+- Click the drawing of the roast line, or press the Next machine button. The readout under it names the next machine.
 
 ## Driving it with control-docs
 
@@ -22,6 +22,7 @@ Preconditions:
 
 - **Render.** Steps `{"goto": "/diagrams/figure/"}` and `{"expectVisible": {"role": "img", "name": "The order flow as a line of machines"}}`. The readout `#roast-line-step` reads `Order placed`.
 - **Script.** Steps `{"click": {"role": "img", "name": "The order flow as a line of machines"}}` and `{"expectEval": "document.getElementById('roast-line-step').textContent === 'In stock?'"}`.
+- **Keyboard.** After the script step, run `{"focus": {"role": "button", "name": "Next machine"}}`, `{"press": "Enter"}` and `{"expectEval": "document.getElementById('roast-line-step').textContent === 'Buy green beans'"}`.
 - **Error.** Run `printf 'throw new Error("no beans");\n' > "$DOCS_VERIFY_RUN/instance/site/docs/diagrams/figures/roast-line.mjs"`, then steps `{"goto": "/diagrams/figure/"}` and `{"expectVisible": {"text": "This figure has an error: the module failed: no beans"}}`. Run `control-docs restore docs/diagrams/figures/roast-line.mjs`.
 - **Proof.** After the script step, run `{"screenshot": "figure-render"}` and `{"aria": "figure-render"}`.
 
