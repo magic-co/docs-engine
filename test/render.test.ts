@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { loadSite } from "../src/index.ts";
+import { KINDS } from "../src/diagrams/flow/model.ts";
+import schema from "../src/diagrams/flow/flow.schema.json" with { type: "json" };
 import { respond } from "../src/render/site.ts";
 import { CLEAN, repo } from "./fixture.ts";
 
@@ -48,6 +50,10 @@ describe("flow render", () => {
     const page = html({ "docs/orders/flow.md": `# Orders\n\n\`\`\`yaml flow\n${wide}\n\`\`\`\n` });
     expect(page).toContain("<docs-flow-node");
     expect(page).not.toMatch(/left:-|x="-/);
+  });
+
+  it("has a label for each node kind of the schema", () => {
+    expect(Object.keys(KINDS)).toEqual(schema.properties.nodes.additionalProperties.properties.kind.enum);
   });
 
   it("shows a diagram error in the page instead of failing", () => {
