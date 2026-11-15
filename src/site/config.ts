@@ -4,7 +4,7 @@ import { compileSchema } from "../schema.ts";
 
 export interface Config {
   title?: string;
-  lint: { ignorePaths: string[] };
+  lint: { ignorePaths: string[]; ignorePages: string[] };
 }
 
 export const CONFIG_FILE = "docs.config.json";
@@ -18,7 +18,10 @@ const validate = compileSchema({
     lint: {
       type: "object",
       additionalProperties: false,
-      properties: { ignorePaths: { type: "array", items: { type: "string" } } },
+      properties: {
+        ignorePaths: { type: "array", items: { type: "string" } },
+        ignorePages: { type: "array", items: { type: "string" } },
+      },
     },
   },
 });
@@ -27,7 +30,7 @@ export class ConfigError extends Error {}
 
 export function readConfig(root: string): Config {
   const file = join(root, CONFIG_FILE);
-  if (!existsSync(file)) return { lint: { ignorePaths: [] } };
+  if (!existsSync(file)) return { lint: { ignorePaths: [], ignorePages: [] } };
   let raw: unknown;
   try {
     raw = JSON.parse(readFileSync(file, "utf8"));
@@ -36,6 +39,6 @@ export function readConfig(root: string): Config {
   }
   const problems = validate(raw);
   if (problems.length > 0) throw new ConfigError(`${CONFIG_FILE}: ${problems.join("; ")}`);
-  const parsed = raw as { title?: string; lint?: { ignorePaths?: string[] } };
-  return { title: parsed.title, lint: { ignorePaths: parsed.lint?.ignorePaths ?? [] } };
+  const parsed = raw as { title?: string; lint?: { ignorePaths?: string[]; ignorePages?: string[] } };
+  return { title: parsed.title, lint: { ignorePaths: parsed.lint?.ignorePaths ?? [], ignorePages: parsed.lint?.ignorePages ?? [] } };
 }

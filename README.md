@@ -51,6 +51,7 @@ Read [the layout and the lint rules](docs/guides/layout-and-lint.md) for the ful
 
 - `title` is the site title. Without it, the site title is the first heading of `README.md`.
 - `lint.ignorePaths` holds globs. The `code-paths` rule does not check a code span that matches one of them.
+- `lint.ignorePages` holds globs of page paths. The `code-paths` rule does not check the pages that match one of them.
 
 ## Work on the engine
 

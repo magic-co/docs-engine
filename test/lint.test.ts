@@ -130,6 +130,18 @@ describe("lint", () => {
     expect(findings({ "docs/guides/cupping.md": page, "docs.config.json": '{ "lint": { "ignorePaths": ["src/**"] } }' })).toEqual([]);
   });
 
+  it("code-paths: finds a bare file name anywhere in the repo, and skips home paths", () => {
+    const page = "# Taste\n\nSee `cupping.md`, `01-roasting.md`, `~/.roaster/config.json` and `gone.md`.\n";
+    expect(findings({ "docs/guides/cupping.md": page }).map(({ line }) => line)).toEqual([3]);
+    const found = lint(loadSite(repo({ "docs/guides/cupping.md": page }))).filter(({ rule }) => rule === "code-paths");
+    expect(found.map(({ message }) => message)).toEqual(["`gone.md` does not exist in the repo"]);
+  });
+
+  it("code-paths: skips the pages that match lint.ignorePages", () => {
+    const changes = { "docs/research/old-notes.md": "# Old notes\n\nSee `src/old-grinder.ts`.\n", "docs.config.json": '{ "lint": { "ignorePages": ["docs/research/**"] } }' };
+    expect(findings(changes)).toEqual([]);
+  });
+
   it("diagrams: finds an unknown type, bad YAML, a schema error and a bad reference", () => {
     const found = findings({
       "docs/orders/a.md": "# A\n\n```yaml pie\nslices: []\n```\n",
