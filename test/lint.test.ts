@@ -80,6 +80,26 @@ describe("lint", () => {
     ]);
   });
 
+  it("code-paths: matches lint.ignorePaths against the path without its line suffix", () => {
+    const changes = { "docs/guides/cupping.md": "# Taste\n\nSee `src/grinder.ts:12`.\n", "docs.config.json": '{ "lint": { "ignorePaths": ["src/*.ts"] } }' };
+    expect(findings(changes)).toEqual([]);
+  });
+
+  it("code-paths: reports a path outside the repo even when the file exists", () => {
+    const root = repo();
+    const outside = join(dirname(root), `${basename(root)}-outside.md`);
+    writeFileSync(outside, "# Outside\n");
+    try {
+      writeFileSync(join(root, "docs/guides/cupping.md"), `# Taste\n\nSee \`../${basename(outside)}\` and \`../../../${basename(outside)}\`.\n`);
+      expect(lint(loadSite(root)).map(({ rule, line }) => [rule, line])).toEqual([
+        ["code-paths", 3],
+        ["code-paths", 3],
+      ]);
+    } finally {
+      rmSync(outside);
+    }
+  });
+
   it("code-paths: checks a file name with a line suffix and keeps the suffix in the message", () => {
     const found = lint(loadSite(repo({ "docs/guides/cupping.md": "# Taste\n\nSee `README.md:3` and `GONE.md:12:4`.\n" })));
     expect(found.map(({ rule, message }) => [rule, message])).toEqual([["code-paths", "`GONE.md:12:4` does not exist in the repo"]]);

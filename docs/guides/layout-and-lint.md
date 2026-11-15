@@ -40,7 +40,7 @@ An inline code span looks like a path when all of these are true:
 - It does not start with `@` or `-`.
 - It does not have `<`, `*`, `{` or `(`.
 
-The path can be relative to the repo root or to the page. To skip some paths, add globs to `lint.ignorePaths` in `docs.config.json`.
+The path can be relative to the repo root or to the page. It must stay inside the repo. To skip some paths, add globs to `lint.ignorePaths` in `docs.config.json`. A glob matches the path without a `:line` suffix.
 
 ### generated
 
