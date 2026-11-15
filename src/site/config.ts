@@ -32,7 +32,7 @@ export function readConfig(root: string): Config {
   try {
     raw = JSON.parse(readFileSync(file, "utf8"));
   } catch (error) {
-    throw new ConfigError(`${CONFIG_FILE}: ${(error as Error).message}`);
+    throw new ConfigError(`${CONFIG_FILE}: ${error instanceof Error ? error.message : String(error)}`);
   }
   const problems = validate(raw);
   if (problems.length > 0) throw new ConfigError(`${CONFIG_FILE}: ${problems.join("; ")}`);

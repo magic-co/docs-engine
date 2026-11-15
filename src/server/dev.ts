@@ -48,7 +48,7 @@ function docsPlugin(root: string, log: (line: string) => void): Plugin {
         try {
           site = loadSite(root);
         } catch (error) {
-          log(`docs: ${(error as Error).message}`);
+          log(`docs: ${error instanceof Error ? error.message : String(error)}`);
           return;
         }
         server.ws.send({ type: "full-reload", path: "*" });
