@@ -3,6 +3,7 @@ import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createServer, type Server } from "node:net";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
+import { fsUrl } from "../src/server/dev.ts";
 import { repo } from "./fixture.ts";
 
 const CLI = join(import.meta.dirname, "../src/cli.ts");
@@ -104,6 +105,28 @@ describe("docs CLI", () => {
     expect(url).not.toBe("http://127.0.0.1:47321/");
     expect(url).toMatch(/^http:\/\/127\.0\.0\.1:\d+\/$/);
     expect((await fetch(url)).status).toBe(200);
+  });
+});
+
+describe("docs dev requests", () => {
+  it("serves a page whose route looks like a file extension", async () => {
+    const url = await dev(repo({ "docs/guides/api.v2.md": "# Order API v2\n" }), 47341);
+    const response = await fetch(new URL("/guides/api.v2/", url));
+    expect(response.status).toBe(200);
+    expect(await response.text()).toContain("Order API v2");
+  });
+
+  it("answers 400 for a malformed URL and keeps serving", async () => {
+    const url = await dev(repo(), 47351);
+    expect((await fetch(new URL("/%", url))).status).toBe(400);
+    expect((await fetch(url)).status).toBe(200);
+  });
+});
+
+describe("fsUrl", () => {
+  it("builds the Vite /@fs URL of a POSIX path and of a Windows path", () => {
+    expect(fsUrl("/home/roaster/docs engine/client.ts", false)).toBe("/@fs/home/roaster/docs%20engine/client.ts");
+    expect(fsUrl("C:\\Users\\roaster\\engine\\client.ts", true)).toBe("/@fs/C:/Users/roaster/engine/client.ts");
   });
 });
 
