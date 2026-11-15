@@ -1,8 +1,16 @@
 {
   "name": "@magic-co/docs-engine",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Turn the Markdown and yaml diagram blocks of a repo into a local docs site, with live reload and a blocking lint.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/magic-co/docs-engine.git"
+  },
+  "homepage": "https://github.com/magic-co/docs-engine#readme",
+  "bugs": {
+    "url": "https://github.com/magic-co/docs-engine/issues"
+  },
   "type": "module",
   "bin": {
     "docs": "dist/cli.js"

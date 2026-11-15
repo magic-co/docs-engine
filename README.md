@@ -66,7 +66,9 @@ npm run build      # compile to dist/
 
 ## Releases
 
-The package has no release workflow yet. A later step adds it.
+To release, change `version` in `package.json` in a pull request. When the pull request merges, the `release` workflow publishes that version to npm and pushes the tag `v<version>`. When npm already has the version, the workflow publishes nothing.
+
+The workflow uses npm trusted publishing (OIDC), so the repo holds no npm token. npm adds a provenance statement to each version.
 
 ## License
 

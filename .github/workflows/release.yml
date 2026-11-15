@@ -1,0 +1,61 @@
+# Publish the package to npm when main has a version that npm does not have.
+# npm trusted publishing (OIDC) gives the credentials and the provenance. The repo holds no npm token.
+name: release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      - id: version
+        run: |
+          name=$(node -p "require('./package.json').name")
+          version=$(node -p "require('./package.json').version")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if npm view "$name@$version" version >/dev/null 2>&1; then
+            echo "new=false" >> "$GITHUB_OUTPUT"
+            echo "$name@$version is on npm. Nothing to publish."
+          else
+            echo "new=true" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.version.outputs.new == 'true'
+        run: npm ci
+      - if: steps.version.outputs.new == 'true'
+        run: npm run typecheck
+      - if: steps.version.outputs.new == 'true'
+        run: npm test
+      - if: steps.version.outputs.new == 'true'
+        run: npm run build
+      - if: steps.version.outputs.new == 'true'
+        run: node dist/cli.js lint
+      - if: steps.version.outputs.new == 'true'
+        run: npm publish
+      - name: Tag the version
+        env:
+          TAG: v${{ steps.version.outputs.version }}
+        run: |
+          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null; then
+            echo "$TAG exists."
+          else
+            git tag "$TAG"
+            git push origin "$TAG"
+          fi
