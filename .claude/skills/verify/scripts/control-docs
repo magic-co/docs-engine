@@ -1,0 +1,154 @@
+#!/usr/bin/env bash
+# Drives one disposable docs-engine instance for verification. See ../SKILL.md.
+set -euo pipefail
+
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO="$(cd "$HERE/../../../.." && pwd)"
+BASE="${TMPDIR:-/tmp}"
+BASE="${BASE%/}/docs-verify"
+
+die() { echo "control-docs: $*" >&2; exit 1; }
+
+need_run() {
+  [ -n "${DOCS_VERIFY_RUN:-}" ] || die "DOCS_VERIFY_RUN is not set. Run 'control-docs start' and export the line it prints."
+  [ -d "$DOCS_VERIFY_RUN" ] || die "$DOCS_VERIFY_RUN does not exist."
+  RUN="$DOCS_VERIFY_RUN"
+  SITE="$RUN/instance/site"
+  EVIDENCE="$RUN/evidence"
+}
+
+node_ok() {
+  local major
+  major="$(node -p 'process.versions.node.split(".")[0]' 2>/dev/null || echo 0)"
+  [ "$major" -ge 24 ]
+}
+
+cmd_start() {
+  node_ok || die "docs-engine needs Node 24 or later. Found: $(node --version 2>/dev/null || echo none)."
+  local id run port
+  id="$(date +%Y%m%d-%H%M%S)-$$"
+  run="$BASE/$id"
+  mkdir -p "$run/instance/site" "$run/evidence"
+  (cd "$REPO" && [ -d node_modules ] || npm ci --no-audit --no-fund >"$run/instance/npm-ci.log" 2>&1) || die "npm ci failed. See $run/instance/npm-ci.log."
+  (cd "$REPO" && npm run build >"$run/instance/build.log" 2>&1) || die "npm run build failed. See $run/instance/build.log."
+  git -C "$REPO" rev-parse HEAD >"$run/instance/revision"
+  git -C "$REPO" status --porcelain >"$run/instance/dirty"
+  # The site copy holds every tracked and new file of the checkout, so the code-paths rule finds each path.
+  (cd "$REPO" && git ls-files -z --cached --others --exclude-standard \
+    | xargs -0 -I{} sh -c 'test -e "$1" && printf "%s\0" "$1"' _ {} \
+    | tar --null -T - -cf - | tar -xf - -C "$run/instance/site")
+  port="${DOCS_VERIFY_PORT:-$(( 20000 + RANDOM % 20000 ))}"
+  cd "$run/instance/site"
+  nohup node "$REPO/dist/cli.js" dev --port "$port" >"$run/instance/dev.out" 2>"$run/instance/dev.err" </dev/null &
+  echo $! >"$run/instance/dev.pid"
+  cd "$REPO"
+  local url="" i
+  for i in $(seq 1 60); do
+    url="$(sed -n 's/^docs: serving .* at \(http[^ ]*\)$/\1/p' "$run/instance/dev.out" | head -1)"
+    [ -n "$url" ] && break
+    kill -0 "$(cat "$run/instance/dev.pid")" 2>/dev/null || die "the dev server exited. See $run/instance/dev.err."
+    sleep 0.5
+  done
+  [ -n "$url" ] || die "the dev server printed no URL in 30 s. See $run/instance/dev.out."
+  echo "${url%/}" >"$run/instance/url"
+  for i in $(seq 1 40); do
+    curl -fsS "${url%/}/" 2>/dev/null | grep -q '<title>' && break
+    sleep 0.25
+  done
+  echo "$run" >"$run/instance/run"
+  echo "export DOCS_VERIFY_RUN=$run"
+  echo "url=${url%/}"
+  echo "site=$run/instance/site"
+  echo "evidence=$run/evidence"
+}
+
+proc_cwd() {
+  if [ -e "/proc/$1/cwd" ]; then readlink "/proc/$1/cwd"
+  else lsof -a -p "$1" -d cwd -Fn 2>/dev/null | sed -n 's/^n//p' | head -1; fi
+}
+
+cmd_doctor() {
+  need_run
+  local ok=1 pid url cmd title head
+  check() { if [ "$2" = 0 ]; then echo "ok    $1"; else echo "FAIL  $1"; ok=0; fi; }
+  node_ok; check "node $(node --version) is 24 or later" $?
+  [ -f "$RUN/instance/dev.pid" ]; check "instance exists at $RUN/instance" $?
+  [ "$ok" = 1 ] || { echo "doctor: not healthy"; return 1; }
+  pid="$(cat "$RUN/instance/dev.pid")"; url="$(cat "$RUN/instance/url")"
+  kill -0 "$pid" 2>/dev/null; check "dev server process $pid is alive" $?
+  cmd="$(ps -o command= -p "$pid" 2>/dev/null || true)"
+  case "$cmd" in *"$REPO/dist/cli.js dev"*) check "process $pid runs $REPO/dist/cli.js dev" 0 ;; *) check "process $pid runs $REPO/dist/cli.js dev (got: $cmd)" 1 ;; esac
+  [ "$(proc_cwd "$pid")" = "$(cd "$SITE" && pwd -P)" ]
+  check "process $pid serves the disposable copy $SITE" $?
+  title="$(curl -fsS "$url/" 2>/dev/null | sed -n 's:.*<title>\(.*\)</title>.*:\1:p' | head -1)"
+  [ -n "$title" ]; check "GET $url/ answers with the title \"$title\"" $?
+  head="$(git -C "$REPO" rev-parse HEAD)"
+  [ "$head" = "$(cat "$RUN/instance/revision")" ]; check "dist/ was built from HEAD $head" $?
+  node -e "require('playwright')" 2>/dev/null; check "Playwright resolves for browse.cjs" $?
+  [ "$ok" = 1 ] && echo "doctor: healthy" || { echo "doctor: not healthy"; return 1; }
+}
+
+cmd_cli() {
+  need_run
+  [ $# -ge 2 ] || die "usage: control-docs cli <label> <docs arguments...>"
+  local label="$1"; shift
+  local out="$EVIDENCE/$label" code=0
+  mkdir -p "$out"
+  printf 'cwd: %s\ncommand: docs %s\n' "$SITE" "$*" >"$out/command.txt"
+  (cd "$SITE" && node "$REPO/dist/cli.js" "$@" >"$out/stdout.txt" 2>"$out/stderr.txt") || code=$?
+  echo "$code" >"$out/exit-code.txt"
+  echo "exit code: $code"
+  echo "--- stdout (last 20 lines)"; tail -20 "$out/stdout.txt"
+  echo "--- stderr (last 20 lines)"; tail -20 "$out/stderr.txt"
+  echo "evidence: $out"
+}
+
+cmd_browse() {
+  need_run
+  [ $# -eq 2 ] || die "usage: control-docs browse <label> <steps.json | ->"
+  DOCS_VERIFY_URL="$(cat "$RUN/instance/url")" DOCS_VERIFY_SITE="$SITE" \
+    node "$HERE/browse.cjs" "$EVIDENCE/$1" "$2"
+}
+
+cmd_static() {
+  need_run
+  [ -f "$SITE/dist-site/index.html" ] || die "$SITE/dist-site/index.html does not exist. Run 'control-docs cli <label> build' first."
+  [ -f "$RUN/instance/static.pid" ] && kill -0 "$(cat "$RUN/instance/static.pid")" 2>/dev/null && { cat "$RUN/instance/static.url"; return; }
+  local port="$(( 20000 + RANDOM % 20000 ))" i
+  nohup python3 -m http.server "$port" --bind 127.0.0.1 --directory "$SITE/dist-site" >"$RUN/instance/static.out" 2>"$RUN/instance/static.err" </dev/null &
+  echo $! >"$RUN/instance/static.pid"
+  for i in $(seq 1 40); do curl -fsS "http://127.0.0.1:$port/" >/dev/null 2>&1 && break; sleep 0.25; done
+  curl -fsS "http://127.0.0.1:$port/" >/dev/null 2>&1 || die "the static server did not answer on port $port. See $RUN/instance/static.err."
+  echo "http://127.0.0.1:$port" | tee "$RUN/instance/static.url"
+}
+
+stop_pid() {
+  local pid child
+  [ -f "$1" ] || return 0
+  pid="$(cat "$1")"
+  kill -0 "$pid" 2>/dev/null || return 0
+  for child in $(pgrep -P "$pid" 2>/dev/null || true); do kill "$child" 2>/dev/null || true; done
+  kill "$pid" 2>/dev/null || true
+  for _ in $(seq 1 20); do kill -0 "$pid" 2>/dev/null || break; sleep 0.25; done
+  kill -0 "$pid" 2>/dev/null && kill -9 "$pid" 2>/dev/null || true
+}
+
+cmd_stop() {
+  need_run
+  stop_pid "$RUN/instance/dev.pid"
+  stop_pid "$RUN/instance/static.pid"
+  mkdir -p "$EVIDENCE/instance-logs"
+  cp "$RUN/instance/"*.out "$RUN/instance/"*.err "$RUN/instance/"*.log "$RUN/instance/revision" "$RUN/instance/dirty" "$EVIDENCE/instance-logs/" 2>/dev/null || true
+  rm -rf "$RUN/instance"
+  echo "stopped. evidence kept at $EVIDENCE"
+}
+
+case "${1:-}" in
+  start) shift; cmd_start "$@" ;;
+  doctor) shift; cmd_doctor "$@" ;;
+  cli) shift; cmd_cli "$@" ;;
+  browse) shift; cmd_browse "$@" ;;
+  static) shift; cmd_static "$@" ;;
+  stop) shift; cmd_stop "$@" ;;
+  *) echo "usage: control-docs start | doctor | cli <label> <docs args...> | browse <label> <steps.json|-> | static | stop"; exit 1 ;;
+esac
