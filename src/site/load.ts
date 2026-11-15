@@ -2,7 +2,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { basename, join, posix } from "node:path";
 import { readGeneratedMark } from "../generated.ts";
 import { readConfig } from "./config.ts";
-import { type Area, areaOf, DOCS_DIR, inSite, LAYOUT } from "./layout.ts";
+import { type Area, areaOf, DOCS_DIR, LAYOUT } from "./layout.ts";
 import { diagramBlocks, firstHeading, parseMarkdown } from "./markdown.ts";
 import type { NavNode, Page, RepoPath, Route, Site } from "./types.ts";
 
@@ -22,7 +22,7 @@ export function loadSite(root: string): Site {
   return { root, config, title, pages, routes, nav: buildNav(title, [...pages.values()]) };
 }
 
-export function markdownFiles(root: string): RepoPath[] {
+function markdownFiles(root: string): RepoPath[] {
   const top = ["README.md", "GLOSSARY.md", "AGENTS.md"].filter((file) => existsSync(join(root, file)));
   const docs = existsSync(join(root, DOCS_DIR))
     ? readdirSync(join(root, DOCS_DIR), { recursive: true, encoding: "utf8" })
@@ -39,17 +39,17 @@ function readPage(root: string, path: RepoPath, area: Area): Page {
   const generated = readGeneratedMark(text);
   return {
     path,
-    ...(route ? { route } : {}),
+    route,
     title: firstHeading(tree) ?? fallbackTitle(path),
     area,
     tree,
     diagrams: diagramBlocks(tree),
-    ...(generated ? { generated } : {}),
+    generated,
   };
 }
 
 function routeOf(path: RepoPath, area: Area): Route | undefined {
-  if (!inSite(area)) return undefined;
+  if (area.visibility === "hidden") return undefined;
   if (area.place.kind === "file") return area.place.route as Route | undefined;
   const segments = path.split("/").slice(1);
   const file = segments.pop() ?? "";
@@ -107,7 +107,7 @@ function folderNode(folder: Folder): NavNode {
   entries.sort((a, b) => compareEntries(a.name, a.node.title, b.name, b.node.title));
   return {
     title,
-    ...(folder.section?.route ? { route: folder.section.route } : {}),
+    route: folder.section?.route,
     children: entries.map((entry) => entry.node),
   };
 }
@@ -122,7 +122,7 @@ function compareEntries(nameA: string, titleA: string, nameB: string, titleB: st
 }
 
 function leaf(page: Page): NavNode {
-  return { title: page.title, ...(page.route ? { route: page.route } : {}), children: [] };
+  return { title: page.title, route: page.route, children: [] };
 }
 
 function humanize(name: string): string {

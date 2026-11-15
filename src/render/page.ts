@@ -23,7 +23,7 @@ export function renderContent(site: Site, page: Page): string {
     const type = diagramType(node);
     if (!type) return;
     const html: RootContent = { type: "html", value: renderDiagram(node, type, slugger, href) };
-    parent.children.splice(index, 1, html as never);
+    (parent.children as RootContent[]).splice(index, 1, html);
     return SKIP;
   });
   return toHtml.stringify(toHtml.runSync(tree as Root) as never);

@@ -18,7 +18,7 @@ export function resolveLink(site: Site, from: Page, url: string): Target {
   const inside = path !== ".." && !path.startsWith("../");
   const exists = inside && existsSync(join(site.root, path));
   const page = exists ? pageAt(site, path) : undefined;
-  return { kind: "local", path, exists, ...(anchor === undefined ? {} : { anchor }), ...(page ? { page } : {}) };
+  return { kind: "local", path, exists, anchor, page };
 }
 
 function pageAt(site: Site, path: RepoPath): Page | undefined {

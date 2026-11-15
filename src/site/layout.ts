@@ -1,8 +1,8 @@
 import type { RepoPath } from "./types.ts";
 
-export type Visibility = "nav" | "linked" | "hidden";
+type Visibility = "nav" | "linked" | "hidden";
 
-export type Place =
+type Place =
   | { kind: "file"; path: string; route?: string }
   | { kind: "folder"; path: string }
   | { kind: "any-folder"; under: string };
@@ -38,8 +38,4 @@ export function areaOf(path: RepoPath): Area | undefined {
         return path.startsWith(`${place.under}/`) && path.split("/").length > 2;
     }
   });
-}
-
-export function inSite(area: Area): boolean {
-  return area.visibility !== "hidden";
 }

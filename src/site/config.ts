@@ -37,8 +37,5 @@ export function readConfig(root: string): Config {
   const problems = validate(raw);
   if (problems.length > 0) throw new ConfigError(`${CONFIG_FILE}: ${problems.join("; ")}`);
   const parsed = raw as { title?: string; lint?: { ignorePaths?: string[] } };
-  return {
-    ...(parsed.title === undefined ? {} : { title: parsed.title }),
-    lint: { ignorePaths: parsed.lint?.ignorePaths ?? [] },
-  };
+  return { title: parsed.title, lint: { ignorePaths: parsed.lint?.ignorePaths ?? [] } };
 }
