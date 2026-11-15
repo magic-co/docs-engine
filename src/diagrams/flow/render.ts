@@ -34,8 +34,8 @@ export function renderFlow(flow: Flow, context: RenderContext): string {
   const width = Math.max(...nodes.map((n) => n.x + n.w), ...[...groups.values()].map((g) => g.x + g.w)) + 24;
   const height = Math.max(...nodes.map((n) => n.y + n.h), ...[...groups.values()].map((g) => g.y + g.h)) + 24;
   const edges = flow.edges.map((edge) => drawEdge(edge, byId, groups));
-  const arrow = `${context.id}-arrow`;
-  const rows = nodes.filter(({ node }) => hasRow(node));
+  const arrow = context.anchor(`${context.id}-arrow`);
+  const rows = new Map(nodes.filter(({ node }) => hasRow(node)).map((placed) => [placed, context.anchor(`${context.id}-${placed.id}`)]));
 
   const svg =
     `<svg viewBox="0 0 ${width} ${height}" aria-hidden="true">` +
@@ -47,14 +47,14 @@ export function renderFlow(flow: Flow, context: RenderContext): string {
     `<g class="docs-flow-edge-labels">${edges.map((e) => e.label).join("")}</g>` +
     `</svg>`;
 
-  const cards = nodes.map((placed) => card(placed, width, height, target(placed, context))).join("");
+  const cards = nodes.map((placed) => card(placed, width, height, target(placed, context, rows.get(placed)))).join("");
   return (
     `<figure class="docs-flow-figure">` +
     `<figcaption>${esc(flow.title)}</figcaption>` +
     `<div class="docs-flow-scroll"><docs-flow role="group" aria-label="${esc(flow.title)}" style="aspect-ratio:${width}/${height};--w:${width}">${svg}${cards}</docs-flow></div>` +
     legend(flow, groups.size > 0) +
     `</figure>` +
-    (rows.length > 0 ? detailsTable(rows, context) : "")
+    (rows.size > 0 ? detailsTable(rows) : "")
   );
 }
 
@@ -139,9 +139,9 @@ function hasRow(node: FlowNode): boolean {
   return node.description !== undefined || (node.details !== undefined && Object.keys(node.details).length > 0);
 }
 
-function target(placed: Placed, context: RenderContext): { href?: string; hint: string } {
+function target(placed: Placed, context: RenderContext, row: string | undefined): { href?: string; hint: string } {
   if (placed.node.href !== undefined) return { href: context.href(placed.node.href), hint: "Click to open the page" };
-  if (hasRow(placed.node)) return { href: `#${context.id}-${placed.id}`, hint: "Click to go to its row below" };
+  if (row !== undefined) return { href: `#${row}`, hint: "Click to go to its row below" };
   return { hint: "" };
 }
 
@@ -172,11 +172,11 @@ function detailsList(node: FlowNode): string {
   return `<dl>${entries.map(([term, text]) => `<dt>${esc(term)}</dt><dd>${esc(text)}</dd>`).join("")}</dl>`;
 }
 
-function detailsTable(rows: Placed[], context: RenderContext): string {
-  const body = rows
+function detailsTable(rows: Map<Placed, string>): string {
+  const body = [...rows]
     .map(
-      ({ id, node }) =>
-        `<tr id="${esc(`${context.id}-${id}`)}"><td>${esc(node.label)}</td><td>${KINDS[node.kind]}</td>` +
+      ([{ node }, row]) =>
+        `<tr id="${esc(row)}"><td>${esc(node.label)}</td><td>${KINDS[node.kind]}</td>` +
         `<td>${node.description === undefined ? "" : `<p>${esc(node.description)}</p>`}${detailsList(node)}</td></tr>`,
     )
     .join("");

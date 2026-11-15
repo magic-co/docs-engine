@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { loadSite } from "../src/index.ts";
 import { respond } from "../src/render/site.ts";
-import { repo } from "./fixture.ts";
+import { CLEAN, repo } from "./fixture.ts";
 
 function html(changes = {}, route = "/orders/flow/"): string {
   const result = respond(loadSite(repo(changes)), route, "");
@@ -28,6 +28,14 @@ describe("flow render", () => {
       ["pack", ' href="/guides/roasting/#cool-the-beans"'],
       ["ship", ""],
     ]);
+  });
+
+  it("gives each details row an id that no heading on the page uses", () => {
+    const page = html({ "docs/orders/flow.md": `${CLEAN["docs/orders/flow.md"]}\n## Order flow roast\n` });
+    expect(page).toContain('<h2 id="order-flow-roast">');
+    const row = /<tr id="([^"]+)"/.exec(page)?.[1];
+    expect(row).not.toBe("order-flow-roast");
+    expect(page).toContain(`<a href="#${row}">Roast batch</a>`);
   });
 
   it("shows a diagram error in the page instead of failing", () => {

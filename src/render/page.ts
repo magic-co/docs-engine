@@ -35,7 +35,7 @@ function renderDiagram(node: Code, type: string, slugger: GithubSlugger, href: (
   if (!checked.ok) return diagramError(type, checked.problems, node.value);
   const title = (checked.data as { title?: unknown }).title;
   const id = slugger.slug(typeof title === "string" ? title : `${type}-diagram`);
-  return checked.type.render(checked.data, { id, href });
+  return checked.type.render(checked.data, { id, href, anchor: (name) => slugger.slug(name) });
 }
 
 function diagramError(type: string, problems: Problem[], source: string): string {

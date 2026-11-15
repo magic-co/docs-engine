@@ -101,7 +101,7 @@ Each node has these fields:
 | `details` | no | An ordered map of labels to text, such as `Entry` and `Exit`. |
 | `href` | no | The link target. Without it, the node links to its row in the table. |
 
-The engine prints a table row for each node that has a `description` or `details`. The id of the row is `<diagram id>-<node id>`. The diagram id comes from the title, so the "Roast batch" row above has the id `order-flow-roast`.
+The engine prints a table row for each node that has a `description` or `details`. The id of the row is `<diagram id>-<node id>`. The diagram id comes from the title, so the "Roast batch" row above has the id `order-flow-roast`. When a heading or another row on the page already uses that id, the engine adds a number, as GitHub does for headings: `order-flow-roast-1`.
 
 ## Checks
 
