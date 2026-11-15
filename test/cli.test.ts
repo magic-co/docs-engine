@@ -79,7 +79,9 @@ describe("docs CLI", () => {
     expect(docs("build", "--root", root, "--out", out).status).toBe(0);
     rmSync(join(root, "docs/guides/cupping.md"));
     writeFileSync(join(root, "docs/guides/brewing.md"), "# Brew\n\n[gone](gone.md)\n");
-    expect(docs("build", "--root", root, "--out", out).status).toBe(1);
+    const failed = docs("build", "--root", root, "--out", out);
+    expect(failed.status).toBe(1);
+    expect(failed.stdout).toContain(`docs: build stopped; ${out} is not changed`);
     expect(existsSync(join(out, "guides/cupping/index.html"))).toBe(true);
   });
 

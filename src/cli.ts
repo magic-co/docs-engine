@@ -35,7 +35,10 @@ async function main(argv: string[]): Promise<number> {
       const out = resolve(values.out);
       const result = await buildSite({ root, out });
       report(result.findings);
-      if (hasErrors(result.findings)) return 1;
+      if (hasErrors(result.findings)) {
+        console.log(`docs: build stopped; ${out} is not changed`);
+        return 1;
+      }
       console.log(`docs: wrote ${result.pages} pages to ${out}`);
       return 0;
     }
