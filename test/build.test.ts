@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { repo } from "./fixture.ts";
@@ -19,6 +19,7 @@ describe("buildSite", () => {
     const manifest = readFileSync(join(out, ".docs-engine-manifest.json"), "utf8");
     const home = readFileSync(join(out, "index.html"), "utf8");
     rmSync(join(root, "docs/guides/cupping.md"));
+    writeFileSync(join(root, "README.md"), "# Roastery docs\n\nA new home page.\n");
     vite.fail = true;
     await expect(buildSite({ root, out })).rejects.toThrow("bundle failed");
     vite.fail = false;

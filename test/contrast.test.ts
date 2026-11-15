@@ -29,7 +29,7 @@ function longHex(value: string): string | undefined {
 function textColors(source: string): { selector: string; value: string; color?: string }[] {
   const tokens = new Map([...source.matchAll(/(--[\w-]+):\s*(#[\da-f]{3,6})\b/gi)].map((match) => [match[1]!, longHex(match[2]!)]));
   return [...source.matchAll(/([^{}]+)\{([^}]*)\}/g)].flatMap(([, selector, body]) =>
-    [...body!.matchAll(/(?:^|[;\s])(color|fill):\s*([^;}]+?)\s*(?:;|$)/g)]
+    [...body!.matchAll(/(?:^|[;\s])(color|fill):\s*([^;}]+?)\s*(?=;|$)/g)]
       .filter(([, property, value]) => !NO_TEXT.has(value!.toLowerCase()) && (property === "color" || !SHAPE.test(selector!.trim())))
       .map(([, , value]) => {
         const token = /^var\((--[\w-]+)\)$/.exec(value!)?.[1];
@@ -51,12 +51,14 @@ describe("text colors", () => {
   });
 
   it("checks literal colors as well as tokens", () => {
-    const sample = ":root { --paper: #ffffff; --card: #fff; --ink: #222; }\n.a { color: #bbb; }\n.b { color: var(--ink); }\n.c { color: #111111; }\n.d { color: red; }";
+    const sample = ":root { --paper: #ffffff; --card: #fff; --ink: #222; }\n.a { color: #bbb; }\n.b { color: var(--ink); }\n.c { color: #111111; }\n.d { color: red; }\n.e {color:#222;fill:#fff;}";
     expect(textColors(sample).map((entry) => [entry.selector, readable(sample)(entry)])).toEqual([
       [".a", false],
       [".b", true],
       [".c", true],
       [".d", false],
+      [".e", true],
+      [".e", false],
     ]);
   });
 });
