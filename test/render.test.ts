@@ -19,6 +19,11 @@ describe("flow render", () => {
     expect(page).toContain("<dt>Entry</dt><dd>Beans are weighed</dd>");
   });
 
+  it("lists each edge as text for screen readers", () => {
+    const list = /<ul class="docs-flow-connections" aria-label="Connections">(.*?)<\/ul>/.exec(html())?.[1];
+    expect(list).toBe("<li>Order placed to Roast batch</li><li>Roast batch to Pack bag: cooled</li><li>Pack bag to Ship</li>");
+  });
+
   it("links each node to its href as a route, else to its details row", () => {
     const page = html();
     const links = [...page.matchAll(/<docs-flow-node value="(\w+)"[^>]*>.*?<a( href="[^"]*")?>/g)].map((match) => [match[1], match[2] ?? ""]);

@@ -54,6 +54,7 @@ export function renderFlow(flow: Flow, context: RenderContext): string {
     `<figure class="docs-flow-figure">` +
     `<figcaption>${esc(flow.title)}</figcaption>` +
     `<div class="docs-flow-scroll"><docs-flow role="group" aria-label="${esc(flow.title)}" style="aspect-ratio:${width}/${height};--w:${width}">${svg}${cards}</docs-flow></div>` +
+    connections(flow) +
     legend(flow, groups.size > 0) +
     `</figure>` +
     (rows.size > 0 ? detailsTable(rows) : "")
@@ -188,6 +189,15 @@ function detailsTable(rows: Map<Placed, string>): string {
     )
     .join("");
   return `<table class="docs-flow-details"><thead><tr><th>Node</th><th>Kind</th><th>Description</th></tr></thead><tbody>${body}</tbody></table>`;
+}
+
+function connections(flow: Flow): string {
+  const name = (id: string) => flow.nodes[id]?.label ?? flow.groups?.[id]?.label ?? id;
+  const items = flow.edges.map((edge) => {
+    const label = [edge.label, edge.side ? "side path" : undefined].filter(Boolean).join(", ");
+    return `<li>${esc(`${name(edge.from)} to ${name(edge.to)}${label ? `: ${label}` : ""}`)}</li>`;
+  });
+  return items.length > 0 ? `<ul class="docs-flow-connections" aria-label="Connections">${items.join("")}</ul>` : "";
 }
 
 function legend(flow: Flow, hasGroups: boolean): string {
