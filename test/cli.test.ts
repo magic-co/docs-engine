@@ -85,6 +85,16 @@ describe("docs CLI", () => {
     for (const file of [join(out, "..\\outside.html"), join(out, "keep.html"), join(root, "outside.html")]) expect(readFileSync(file, "utf8")).toBe("mine");
   });
 
+  it("build keeps files in the assets folder that it did not write", () => {
+    const root = repo();
+    const out = join(root, "site-out");
+    expect(docs("build", "--root", root, "--out", out).status).toBe(0);
+    writeFileSync(join(out, "assets/notes.txt"), "mine");
+    expect(docs("build", "--root", root, "--out", out).status).toBe(0);
+    expect(readFileSync(join(out, "assets/notes.txt"), "utf8")).toBe("mine");
+    expect(existsSync(join(out, "assets/client.js"))).toBe(true);
+  });
+
   it("build leaves an earlier output as it is when lint has errors", () => {
     const root = repo();
     const out = join(root, "site-out");

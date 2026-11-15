@@ -1,4 +1,5 @@
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmdirSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, isAbsolute, join, posix, relative, resolve, sep } from "node:path";
 import { build } from "vite";
 import { hasErrors, lint } from "./lint/index.ts";
@@ -15,30 +16,37 @@ export async function buildSite(options: { root: string; out: string }): Promise
   const site = loadSite(options.root);
   const findings = lint(site);
   if (hasErrors(findings)) return { findings, pages: 0 };
-  const files = new Map<string, string>([["404.html", notFound(site, HEAD)]]);
+  const files = new Map<string, string | Buffer>([["404.html", notFound(site, HEAD)]]);
   for (const page of site.routes.values()) {
     files.set(posix.join(...(page.route ?? "/").split("/").filter(Boolean), "index.html"), renderPage(site, page, HEAD));
   }
+  for (const [name, bytes] of await bundleClient()) files.set(posix.join(ASSETS_DIR, name), bytes);
   for (const file of files.keys()) if (!inside(options.out, file)) throw new Error(`docs: the page file \`${file}\` is outside ${options.out}`);
   const stale = readManifest(options.out).filter((file) => !files.has(file));
-  for (const [file, html] of files) {
+  for (const [file, contents] of files) {
     mkdirSync(dirname(join(options.out, file)), { recursive: true });
-    writeFileSync(join(options.out, file), html);
+    writeFileSync(join(options.out, file), contents);
   }
   for (const file of stale) removeWithEmptyParents(options.out, file);
   writeFileSync(join(options.out, MANIFEST), `${JSON.stringify([...files.keys()].sort(), null, 2)}\n`);
-  await build({
-    configFile: false,
-    root: ENGINE_ROOT,
-    logLevel: "warn",
-    define: { "process.env.NODE_ENV": JSON.stringify("production") },
-    build: {
-      outDir: join(options.out, ASSETS_DIR),
-      emptyOutDir: true,
-      lib: { entry: CLIENT_ENTRY, formats: ["es"], fileName: () => "client.js", cssFileName: "client" },
-    },
-  });
   return { findings, pages: site.routes.size };
+}
+
+// Bundle into a scratch folder first, so a failed bundle changes no output and Vite empties no folder of the user.
+async function bundleClient(): Promise<Map<string, Buffer>> {
+  const dir = mkdtempSync(join(tmpdir(), "docs-engine-client-"));
+  try {
+    await build({
+      configFile: false,
+      root: ENGINE_ROOT,
+      logLevel: "warn",
+      define: { "process.env.NODE_ENV": JSON.stringify("production") },
+      build: { outDir: dir, emptyOutDir: true, lib: { entry: CLIENT_ENTRY, formats: ["es"], fileName: () => "client.js", cssFileName: "client" } },
+    });
+    return new Map(readdirSync(dir).map((name) => [name, readFileSync(join(dir, name))]));
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 }
 
 function readManifest(out: string): string[] {
@@ -50,7 +58,7 @@ function readManifest(out: string): string[] {
   } catch {
     return [];
   }
-  return Array.isArray(list) ? list.filter((path): path is string => typeof path === "string" && path.endsWith(".html") && inside(out, path)) : [];
+  return Array.isArray(list) ? list.filter((path): path is string => typeof path === "string" && (path.endsWith(".html") || path.startsWith(`${ASSETS_DIR}/`)) && inside(out, path)) : [];
 }
 
 // Someone may edit the manifest, and Windows reads a backslash as a separator, so check each path before a remove.
