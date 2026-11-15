@@ -1,3 +1,4 @@
+import { extname } from "node:path";
 import { createServer, type Plugin, type ViteDevServer } from "vite";
 import { CLIENT_ENTRY, ENGINE_ROOT } from "../paths.ts";
 import { respond } from "../render/site.ts";
@@ -49,7 +50,7 @@ function docsPlugin(root: string, log: (line: string) => void): Plugin {
       });
       server.middlewares.use(async (request, response, next) => {
         const pathname = decodeURI(new URL(request.url ?? "/", "http://localhost").pathname);
-        if (pathname.startsWith("/@") || pathname.startsWith("/node_modules/")) return next();
+        if (pathname.startsWith("/@") || extname(pathname) !== "") return next();
         const result = respond(site, pathname, HEAD);
         if (result.status === 301) {
           response.writeHead(301, { location: result.location }).end();

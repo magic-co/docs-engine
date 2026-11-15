@@ -83,3 +83,16 @@ describe("docs CLI", () => {
     expect((await fetch(url)).status).toBe(200);
   });
 });
+
+describe("docs dev on the engine repo", () => {
+  it("serves the client modules that the pages import", async () => {
+    const url = await dev(join(import.meta.dirname, ".."), 47331);
+    const html = await (await fetch(url)).text();
+    const entry = /<script type="module" src="(\/@fs[^"]+)"/.exec(html)?.[1];
+    expect(entry).toBeDefined();
+    const client = await (await fetch(new URL(entry!, url))).text();
+    const imports = [...client.matchAll(/import\s+"([^"]+)"/g)].map((match) => match[1]!);
+    expect(imports.length).toBeGreaterThan(0);
+    for (const path of imports) expect((await fetch(new URL(path, new URL(entry!, url)))).status, path).toBe(200);
+  });
+});
