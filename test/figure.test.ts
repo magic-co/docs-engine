@@ -55,8 +55,8 @@ describe("figure", () => {
     ).toEqual([]);
   });
 
-  it("reads the result when the module prints to stdout", () => {
-    const noisy = `console.log("loading the shop");\n${MODULE}`;
+  it("reads the result when the module prints to stdout before and after it", () => {
+    const noisy = `console.log("loading the shop");\nsetTimeout(() => console.log("done"), 10);\n${MODULE}`;
     expect(figureFindings({ "figures/shop.mjs": noisy, "docs/orders/shop.md": page("module: figures/shop.mjs\nsource: flow.md#order-flow") })).toEqual([]);
   });
 
