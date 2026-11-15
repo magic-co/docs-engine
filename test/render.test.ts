@@ -75,8 +75,20 @@ describe("page render", () => {
     expect(page).toMatch(/<footer class="docs-footer"><a href="\/research\/">Research<\/a><\/footer>/);
   });
 
-  it("escapes a route in the nav", () => {
-    expect(html({ "docs/guides/a&b.md": "# Beans and brew\n" }, "/guides/")).toContain('<a href="/guides/a&amp;b/">Beans and brew</a>');
+  it("encodes each route segment in the nav, in links and in node links", () => {
+    const changes = {
+      "docs/guides/a&b.md": "# Beans and brew\n",
+      "docs/guides/rate%41.md": "# Rate\n",
+      "docs/guides/焙煎.md": "# Roast\n",
+      "docs/guides/cupping.md": "# Taste\n\n[rate](rate%2541.md) [roast](焙煎.md#roast)\n",
+      "docs/orders/flow.md": "# Orders\n\n```yaml flow\ntitle: T\nnodes:\n  a: { label: A, kind: start, at: [0, 0], href: ../guides/rate%2541.md }\nedges: []\n```\n",
+    };
+    const nav = html(changes, "/guides/");
+    expect(nav).toContain('<a href="/guides/a%26b/">Beans and brew</a>');
+    expect(nav).toContain('<a href="/guides/rate%2541/">Rate</a>');
+    expect(nav).toContain('<a href="/guides/%E7%84%99%E7%85%8E/">Roast</a>');
+    expect(html(changes, "/guides/cupping/")).toContain('<a href="/guides/rate%2541/">rate</a> <a href="/guides/%E7%84%99%E7%85%8E/#roast">roast</a>');
+    expect(html(changes, "/orders/flow/")).toContain('<a href="/guides/rate%2541/">A</a>');
   });
 
   it("keeps the query of a link in its route", () => {
@@ -85,9 +97,10 @@ describe("page render", () => {
     );
   });
 
-  it("redirects a route without its trailing slash and answers 404 for an unknown route", () => {
-    const site = loadSite(repo());
+  it("redirects a route without its trailing slash to its encoded URL and answers 404 for an unknown route", () => {
+    const site = loadSite(repo({ "docs/guides/焙煎.md": "# Roast\n" }));
     expect(respond(site, "/guides", "")).toEqual({ status: 301, location: "/guides/" });
+    expect(respond(site, "/guides/焙煎", "")).toEqual({ status: 301, location: "/guides/%E7%84%99%E7%85%8E/" });
     expect(respond(site, "/nope/", "").status).toBe(404);
   });
 });

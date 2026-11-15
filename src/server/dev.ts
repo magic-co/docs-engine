@@ -6,6 +6,7 @@ import { respond } from "../render/site.ts";
 import { CONFIG_FILE } from "../site/config.ts";
 import { loadSite } from "../site/load.ts";
 import type { Route, Site } from "../site/types.ts";
+import { urlPathname } from "../site/url.ts";
 
 export const DEFAULT_PORT = 4173;
 const HOST = "127.0.0.1";
@@ -56,7 +57,7 @@ function docsPlugin(root: string, log: (line: string) => void): Plugin {
       server.middlewares.use(async (request, response, next) => {
         let pathname: string;
         try {
-          pathname = decodeURI(new URL(request.url ?? "/", "http://localhost").pathname);
+          pathname = urlPathname(new URL(request.url ?? "/", "http://localhost").pathname);
         } catch {
           response.writeHead(400, { "content-type": "text/plain; charset=utf-8" }).end("Bad request: the URL is malformed.\n");
           return;

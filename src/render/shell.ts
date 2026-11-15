@@ -1,4 +1,5 @@
 import type { NavNode, Page, Route, Site } from "../site/types.ts";
+import { routeUrl } from "../site/url.ts";
 import { esc } from "./html.ts";
 
 const RESEARCH = "/research/" as Route;
@@ -41,5 +42,5 @@ function navLabel(node: NavNode, current: Route | undefined): string {
   if (!node.route) return `<span class="docs-nav-section">${esc(node.title)}</span>`;
   const here = node.route === current ? ' aria-current="page"' : "";
   const kind = node.children.length > 0 ? ' class="docs-nav-section"' : "";
-  return `<a href="${esc(node.route)}"${kind}${here}>${esc(node.title)}</a>`;
+  return `<a href="${esc(routeUrl(node.route))}"${kind}${here}>${esc(node.title)}</a>`;
 }

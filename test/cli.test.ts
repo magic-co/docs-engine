@@ -130,6 +130,13 @@ describe("docs dev requests", () => {
     expect(await response.text()).toContain("Order API v2");
   });
 
+  it("serves and redirects pages whose names need percent-encoding", async () => {
+    const url = await dev(repo({ "docs/guides/rate%41.md": "# Rate\n", "docs/guides/why?.md": "# Why\n", "docs/guides/焙煎.md": "# Roast\n" }), 47361);
+    for (const path of ["/guides/rate%2541/", "/guides/why%3F/", "/guides/%E7%84%99%E7%85%8E/"]) expect((await fetch(new URL(path, url))).status, path).toBe(200);
+    const moved = await fetch(new URL("/guides/焙煎", url), { redirect: "manual" });
+    expect([moved.status, moved.headers.get("location")]).toEqual([301, "/guides/%E7%84%99%E7%85%8E/"]);
+  });
+
   it("answers 400 for a malformed URL and keeps serving", async () => {
     const url = await dev(repo(), 47351);
     expect((await fetch(new URL("/%", url))).status).toBe(400);

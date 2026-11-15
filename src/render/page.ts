@@ -8,6 +8,7 @@ import { checkDiagram, type Problem } from "../diagrams/index.ts";
 import { resolveLink } from "../site/links.ts";
 import { diagramType, headingSlugs } from "../site/markdown.ts";
 import type { Page, Site } from "../site/types.ts";
+import { routeUrl } from "../site/url.ts";
 import { esc } from "./html.ts";
 
 const toHtml = unified().use(remarkRehype, { allowDangerousHtml: true }).use(rehypeStringify, { allowDangerousHtml: true });
@@ -50,5 +51,5 @@ function linkHref(site: Site, page: Page, url: string): string {
   const target = resolveLink(site, page, url);
   if (target.kind !== "local" || !target.page?.route) return url;
   const anchor = target.anchor ? `#${target.anchor}` : "";
-  return target.page === page && anchor && !target.query ? anchor : `${target.page.route}${target.query}${anchor}`;
+  return target.page === page && anchor && !target.query ? anchor : `${routeUrl(target.page.route)}${target.query}${anchor}`;
 }
