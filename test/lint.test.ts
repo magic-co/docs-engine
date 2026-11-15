@@ -53,6 +53,13 @@ describe("lint", () => {
     ]);
   });
 
+  it("links: finds the file of a link with a query and checks its heading", () => {
+    expect(findings({ "docs/guides/cupping.md": "# Taste\n\n[ok](brewing.md?v=2) [bad](brewing.md?v=2#nope) [gone](gone.md?v=2)\n" })).toEqual([
+      { rule: "links", severity: "error", file: "docs/guides/cupping.md", line: 3 },
+      { rule: "links", severity: "error", file: "docs/guides/cupping.md", line: 3 },
+    ]);
+  });
+
   it("routes: reports each source of a route that two sources share", () => {
     const messages = (changes: Files) => lint(loadSite(repo(changes))).map(({ rule, file, message }) => [rule, file, message]);
     expect(messages({ "docs/guides/index.md": "# Guides too\n", "docs/guides/setup.md": "# Set up\n", "docs/guides/01-setup.md": "# Set up first\n" })).toEqual([

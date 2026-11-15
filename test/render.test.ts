@@ -79,6 +79,12 @@ describe("page render", () => {
     expect(html({ "docs/guides/a&b.md": "# Beans and brew\n" }, "/guides/")).toContain('<a href="/guides/a&amp;b/">Beans and brew</a>');
   });
 
+  it("keeps the query of a link in its route", () => {
+    expect(html({ "docs/guides/cupping.md": "# Taste\n\n[q](01-roasting.md?v=2#cool-the-beans)\n" }, "/guides/cupping/")).toContain(
+      '<a href="/guides/roasting/?v=2#cool-the-beans">q</a>',
+    );
+  });
+
   it("redirects a route without its trailing slash and answers 404 for an unknown route", () => {
     const site = loadSite(repo());
     expect(respond(site, "/guides", "")).toEqual({ status: 301, location: "/guides/" });

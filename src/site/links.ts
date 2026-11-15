@@ -5,18 +5,19 @@ import type { Page, RepoPath, Site } from "./types.ts";
 export type Target =
   | { kind: "external" }
   | { kind: "malformed" }
-  | { kind: "local"; path: RepoPath; anchor?: string; exists: boolean; page?: Page };
+  | { kind: "local"; path: RepoPath; query: string; anchor?: string; exists: boolean; page?: Page };
 
 const SCHEME = /^[a-z][a-z\d+.-]*:/i;
+const PARTS = /^([^?#]*)(\?[^#]*)?(?:#(.*))?$/s;
 
 export function resolveLink(site: Site, from: Page, url: string): Target {
   if (SCHEME.test(url) || url.startsWith("//")) return { kind: "external" };
-  const hash = url.indexOf("#");
+  const [, pathname = "", query = "", hash] = PARTS.exec(url) ?? [];
   let file: string;
   let anchor: string | undefined;
   try {
-    file = decodeURI(hash === -1 ? url : url.slice(0, hash));
-    anchor = hash === -1 ? undefined : decodeURIComponent(url.slice(hash + 1));
+    file = decodeURI(pathname);
+    anchor = hash === undefined ? undefined : decodeURIComponent(hash);
   } catch {
     return { kind: "malformed" };
   }
@@ -25,7 +26,7 @@ export function resolveLink(site: Site, from: Page, url: string): Target {
   const inside = path !== ".." && !path.startsWith("../");
   const exists = inside && existsSync(join(site.root, path));
   const page = exists ? pageAt(site, path) : undefined;
-  return { kind: "local", path, exists, anchor, page };
+  return { kind: "local", path, query, exists, anchor, page };
 }
 
 function pageAt(site: Site, path: RepoPath): Page | undefined {
