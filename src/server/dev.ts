@@ -1,14 +1,19 @@
 import { extname } from "node:path";
+import { pathToFileURL } from "node:url";
 import { createServer, type Plugin, type ViteDevServer } from "vite";
 import { CLIENT_ENTRY, ENGINE_ROOT } from "../paths.ts";
 import { respond } from "../render/site.ts";
 import { CONFIG_FILE } from "../site/config.ts";
 import { loadSite } from "../site/load.ts";
-import type { Site } from "../site/types.ts";
+import type { Route, Site } from "../site/types.ts";
 
 export const DEFAULT_PORT = 4173;
 const HOST = "127.0.0.1";
-const HEAD = `<script type="module" src="/@fs${CLIENT_ENTRY}"></script>`;
+const HEAD = `<script type="module" src="${fsUrl(CLIENT_ENTRY)}"></script>`;
+
+export function fsUrl(path: string, windows = process.platform === "win32"): string {
+  return `/@fs${pathToFileURL(path, { windows }).pathname}`;
+}
 
 export interface DevServer {
   url: string;
@@ -43,21 +48,32 @@ function docsPlugin(root: string, log: (line: string) => void): Plugin {
         try {
           site = loadSite(root);
         } catch (error) {
-          log(`docs: ${(error as Error).message}`);
+          log(`docs: ${error instanceof Error ? error.message : String(error)}`);
           return;
         }
         server.ws.send({ type: "full-reload", path: "*" });
       });
       server.middlewares.use(async (request, response, next) => {
-        const pathname = decodeURI(new URL(request.url ?? "/", "http://localhost").pathname);
-        if (pathname.startsWith("/@") || extname(pathname) !== "") return next();
-        const result = respond(site, pathname, HEAD);
-        if (result.status === 301) {
-          response.writeHead(301, { location: result.location }).end();
+        let pathname: string;
+        try {
+          pathname = decodeURI(new URL(request.url ?? "/", "http://localhost").pathname);
+        } catch {
+          response.writeHead(400, { "content-type": "text/plain; charset=utf-8" }).end("Bad request: the URL is malformed.\n");
           return;
         }
-        const html = await server.transformIndexHtml(pathname, result.html);
-        response.writeHead(result.status, { "content-type": "text/html; charset=utf-8" }).end(html);
+        const known = site.routes.has(pathname as Route) || site.routes.has(`${pathname}/` as Route);
+        if (pathname.startsWith("/@") || (extname(pathname) !== "" && !known)) return next();
+        try {
+          const result = respond(site, pathname, HEAD);
+          if (result.status === 301) {
+            response.writeHead(301, { location: result.location }).end();
+            return;
+          }
+          const html = await server.transformIndexHtml(pathname, result.html);
+          response.writeHead(result.status, { "content-type": "text/html; charset=utf-8" }).end(html);
+        } catch (error) {
+          next(error);
+        }
       });
     },
   };

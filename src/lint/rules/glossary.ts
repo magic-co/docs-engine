@@ -22,10 +22,11 @@ export const glossary: Rule = {
         if (NOT_PROSE.has(node.type)) return SKIP;
         if (node.type !== "text" || !parent) return;
         for (const match of node.value.matchAll(CANDIDATE)) {
-          const before = node.value.slice(0, match.index).trimEnd();
+          const prefix = node.value.slice(0, match.index);
+          const before = prefix.trimEnd();
           const start = before === "" ? index === 0 && BLOCKS.has(parent.type) : /[.!?:]$/.test(before);
           if (start || isDefined(node.value.slice(match.index), terms)) continue;
-          const line = (node.position?.start.line ?? 1) + (before.match(/\n/g)?.length ?? 0);
+          const line = (node.position?.start.line ?? 1) + (prefix.match(/\n/g)?.length ?? 0);
           const key = match[0].toLowerCase().replace(/\s+/g, " ");
           const entry = places.get(key) ?? { term: match[0], file: page.path, line, at: new Set<string>() };
           entry.at.add(`${page.path}:${line}`);

@@ -20,7 +20,7 @@ export function checkDiagram(block: DiagramBlock): Checked {
     ok: false,
     problems: messages.map((message) => ({ line, message })),
   });
-  const type = DIAGRAM_TYPES[block.type];
+  const type = Object.hasOwn(DIAGRAM_TYPES, block.type) ? DIAGRAM_TYPES[block.type] : undefined;
   if (!type) return fail([`unknown diagram type \`${block.type}\` (known: ${Object.keys(DIAGRAM_TYPES).join(", ")})`]);
   const document = parseDocument(block.source);
   if (document.errors.length > 0) {
@@ -32,7 +32,12 @@ export function checkDiagram(block: DiagramBlock): Checked {
       })),
     };
   }
-  const data: unknown = document.toJS();
+  let data: unknown;
+  try {
+    data = document.toJS();
+  } catch (error) {
+    return fail([`YAML: ${error instanceof Error ? error.message : String(error)}`]);
+  }
   let validate = validators.get(type);
   if (!validate) {
     validate = compileSchema(type.schema);

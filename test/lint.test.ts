@@ -43,6 +43,19 @@ describe("lint", () => {
     expect(findings({ "docs/guides/cupping.md": "# Taste\n\n[web](https://example.com/x.md) [mail](mailto:a@example.com)\n" })).toEqual([]);
   });
 
+  it("links: reports a link with malformed percent-encoding and checks the other links", () => {
+    expect(findings({ "docs/guides/cupping.md": "# Taste\n\n[bad](#%) and [bad file](%zz.md).\n\n[gone](gone.md)\n" })).toEqual([
+      { rule: "links", severity: "error", file: "docs/guides/cupping.md", line: 3 },
+      { rule: "links", severity: "error", file: "docs/guides/cupping.md", line: 3 },
+      { rule: "links", severity: "error", file: "docs/guides/cupping.md", line: 5 },
+    ]);
+  });
+
+  it("code-paths: checks a file name with a line suffix and keeps the suffix in the message", () => {
+    const found = lint(loadSite(repo({ "docs/guides/cupping.md": "# Taste\n\nSee `README.md:3` and `GONE.md:12:4`.\n" })));
+    expect(found.map(({ rule, message }) => [rule, message])).toEqual([["code-paths", "`GONE.md:12:4` does not exist in the repo"]]);
+  });
+
   it("code-paths: finds a path that does not exist, and skips ignored globs", () => {
     const page = "# Taste\n\nSee `src/grinder.ts` and `docs/guides/brewing.md` and `brewing.md`.\n";
     expect(findings({ "docs/guides/cupping.md": page })).toEqual([{ rule: "code-paths", severity: "error", file: "docs/guides/cupping.md", line: 3 }]);
@@ -65,6 +78,31 @@ describe("lint", () => {
     expect(found[0]?.line).toBe(3);
   });
 
+  it("diagrams: reports a type name that only an object prototype has as unknown", () => {
+    expect(findings({ "docs/orders/a.md": "# A\n\n```yaml constructor\na: 1\n```\n" })).toEqual([
+      { rule: "diagrams", severity: "error", file: "docs/orders/a.md", line: 3 },
+    ]);
+  });
+
+  it("diagrams: reports an alias to a missing anchor", () => {
+    expect(findings({ "docs/orders/a.md": flow("title: T\nnodes:\n  a: *missing\nedges: []") })).toEqual([
+      { rule: "diagrams", severity: "error", file: "docs/orders/a.md", line: 3 },
+    ]);
+  });
+
+  it("diagrams: does not take an inherited name such as toString for a node or a group", () => {
+    const messages = (body: string) => lint(loadSite(repo({ "docs/orders/a.md": flow(body) }))).map((finding) => finding.message);
+    expect(messages(`${NODES}\nedges: [ { from: toString, to: b } ]`)).toEqual([expect.stringContaining("`toString`")]);
+    expect(messages(`${NODES}\nedges: [ { from: a, to: constructor } ]`)).toEqual([expect.stringContaining("`constructor`")]);
+  });
+
+  it("diagrams: finds two nodes in one cell when a node id is empty", () => {
+    const body = "title: T\nnodes:\n  '': { label: A, kind: start, at: [0, 0] }\n  b: { label: B, kind: end, at: [0, 0] }\nedges: []";
+    expect(lint(loadSite(repo({ "docs/orders/a.md": flow(body) }))).map((finding) => finding.message)).toEqual([
+      expect.stringContaining("the same cell [0,0]"),
+    ]);
+  });
+
   it("generated: passes an intact page and fails an edited one", () => {
     const intact = generatedPage("roast-log", "# Roast log\n\nBatch 12.\n");
     expect(findings({ "docs/orders/log.md": intact })).toEqual([]);
@@ -84,6 +122,12 @@ describe("lint", () => {
     expect(found).toEqual([{ rule: "glossary", severity: "warning", file: "docs/guides/brewing.md", line: 3 }]);
     expect(hasErrors(lint(loadSite(repo({ "docs/guides/cupping.md": "# Taste\n\nWe sell Cold Brew. Then Cold Brew.\n" }))))).toBe(false);
   });
+
+  it("glossary: gives the line of a term that starts a continued line", () => {
+    expect(findings({ "docs/guides/cupping.md": "# Taste\n\nWe sell\nCold Brew and\nthen Cold Brew.\n" })).toEqual([
+      { rule: "glossary", severity: "warning", file: "docs/guides/cupping.md", line: 4 },
+    ]);
+  });
 });
 
 describe("looksLikePath", () => {
@@ -93,6 +137,9 @@ describe("looksLikePath", () => {
     ["a/b", true],
     ["package.json", true],
     ["docs.config.json", true],
+    ["README.md:12", true],
+    ["src/cli.ts:12:4", true],
+    ["localhost:4173", false],
     ["docs dev", false],
     ["@scope/pkg", false],
     ["--port", false],

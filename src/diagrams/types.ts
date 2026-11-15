@@ -1,6 +1,7 @@
 export interface RenderContext {
   id: string;
   href(url: string): string;
+  anchor(name: string): string;
 }
 
 export interface DiagramType<T> {

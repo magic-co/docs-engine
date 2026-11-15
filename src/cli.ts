@@ -35,7 +35,10 @@ async function main(argv: string[]): Promise<number> {
       const out = resolve(values.out);
       const result = await buildSite({ root, out });
       report(result.findings);
-      if (hasErrors(result.findings)) return 1;
+      if (hasErrors(result.findings)) {
+        console.log(`docs: build stopped; ${out} is not changed`);
+        return 1;
+      }
       console.log(`docs: wrote ${result.pages} pages to ${out}`);
       return 0;
     }
@@ -61,7 +64,11 @@ function parsePort(text: string | undefined): number {
 function report(findings: Finding[]): void {
   for (const finding of findings) console.log(formatFinding(finding));
   const errors = findings.filter((finding) => finding.severity === "error").length;
-  if (findings.length > 0) console.log(`docs: ${errors} errors, ${findings.length - errors} warnings`);
+  if (findings.length > 0) console.log(`docs: ${count(errors, "error")}, ${count(findings.length - errors, "warning")}`);
+}
+
+function count(n: number, noun: string): string {
+  return `${n} ${noun}${n === 1 ? "" : "s"}`;
 }
 
 main(process.argv.slice(2)).then(

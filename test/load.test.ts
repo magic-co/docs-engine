@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { loadSite, type NavNode } from "../src/index.ts";
+import { loadSite, type NavNode, type Page, type Site } from "../src/index.ts";
 import { repo } from "./fixture.ts";
 
 function outline(node: NavNode): unknown {
   return node.children.length === 0 ? `${node.title} ${node.route}` : { [`${node.title} ${node.route ?? "-"}`]: node.children.map(outline) };
+}
+
+function pageAt(site: Site, path: string): Page | undefined {
+  return [...site.pages.values()].find((page) => page.path === path);
 }
 
 describe("loadSite", () => {
@@ -29,14 +33,14 @@ describe("loadSite", () => {
 
   it("keeps research in the site but out of the nav", () => {
     const site = loadSite(repo());
-    expect(site.pages.get("docs/research/bean-sources.md" as never)?.route).toBe("/research/bean-sources/");
+    expect(pageAt(site, "docs/research/bean-sources.md")?.route).toBe("/research/bean-sources/");
     expect(JSON.stringify(site.nav)).not.toContain("/research/");
   });
 
   it("keeps agent files out of the site", () => {
     const site = loadSite(repo());
     for (const path of ["AGENTS.md", "docs/agents/README.md"]) {
-      const page = site.pages.get(path as never);
+      const page = pageAt(site, path);
       expect(page?.area.name).toBe("agents");
       expect(page?.route).toBeUndefined();
     }
@@ -57,14 +61,14 @@ describe("loadSite", () => {
 
   it("falls back to the file name for a title and to the config for the site title", () => {
     const site = loadSite(repo({ "docs/guides/cupping.md": "No heading here.\n", "docs.config.json": '{ "title": "Bean Book" }' }));
-    expect(site.pages.get("docs/guides/cupping.md" as never)?.title).toBe("cupping");
+    expect(pageAt(site, "docs/guides/cupping.md")?.title).toBe("cupping");
     expect(site.title).toBe("Bean Book");
     expect(site.nav.title).toBe("Bean Book");
   });
 
   it("finds the yaml diagram blocks of a page", () => {
     const site = loadSite(repo());
-    const page = site.pages.get("docs/orders/flow.md" as never);
+    const page = pageAt(site, "docs/orders/flow.md");
     expect(page?.diagrams.map((block) => [block.type, block.line])).toEqual([["flow", 3]]);
   });
 

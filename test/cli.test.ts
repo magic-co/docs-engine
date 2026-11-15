@@ -1,8 +1,9 @@
 import { type ChildProcess, spawn, spawnSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createServer, type Server } from "node:net";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
+import { fsUrl } from "../src/server/dev.ts";
 import { repo } from "./fixture.ts";
 
 const CLI = join(import.meta.dirname, "../src/cli.ts");
@@ -46,6 +47,7 @@ describe("docs CLI", () => {
     const broken = docs("lint", "--root", repo({ "docs/guides/cupping.md": "# Taste\n\n[gone](gone.md)\n" }));
     expect(broken.status).toBe(1);
     expect(broken.stdout).toContain("docs/guides/cupping.md:3 links ");
+    expect(broken.stdout).toContain("docs: 1 error, 0 warnings");
   });
 
   it("build writes the HTML pages and the client assets", () => {
@@ -57,6 +59,30 @@ describe("docs CLI", () => {
     expect(existsSync(join(out, "research/index.html"))).toBe(true);
     expect(existsSync(join(out, "agents"))).toBe(false);
     expect(existsSync(join(out, "assets/client.js")) && existsSync(join(out, "assets/client.css"))).toBe(true);
+  });
+
+  it("build removes the pages of deleted sources and keeps other files", () => {
+    const root = repo();
+    const out = join(root, "site-out");
+    expect(docs("build", "--root", root, "--out", out).status).toBe(0);
+    writeFileSync(join(out, "keep.txt"), "mine");
+    rmSync(join(root, "docs/guides/cupping.md"));
+    expect(docs("build", "--root", root, "--out", out).status).toBe(0);
+    expect(existsSync(join(out, "guides/cupping"))).toBe(false);
+    expect(existsSync(join(out, "guides/brewing/index.html"))).toBe(true);
+    expect(readFileSync(join(out, "keep.txt"), "utf8")).toBe("mine");
+  });
+
+  it("build leaves an earlier output as it is when lint has errors", () => {
+    const root = repo();
+    const out = join(root, "site-out");
+    expect(docs("build", "--root", root, "--out", out).status).toBe(0);
+    rmSync(join(root, "docs/guides/cupping.md"));
+    writeFileSync(join(root, "docs/guides/brewing.md"), "# Brew\n\n[gone](gone.md)\n");
+    const failed = docs("build", "--root", root, "--out", out);
+    expect(failed.status).toBe(1);
+    expect(failed.stdout).toContain(`docs: build stopped; ${out} is not changed`);
+    expect(existsSync(join(out, "guides/cupping/index.html"))).toBe(true);
   });
 
   it("build exits 1 and writes nothing when lint has errors", () => {
@@ -81,6 +107,28 @@ describe("docs CLI", () => {
     expect(url).not.toBe("http://127.0.0.1:47321/");
     expect(url).toMatch(/^http:\/\/127\.0\.0\.1:\d+\/$/);
     expect((await fetch(url)).status).toBe(200);
+  });
+});
+
+describe("docs dev requests", () => {
+  it("serves a page whose route looks like a file extension", async () => {
+    const url = await dev(repo({ "docs/guides/api.v2.md": "# Order API v2\n" }), 47341);
+    const response = await fetch(new URL("/guides/api.v2/", url));
+    expect(response.status).toBe(200);
+    expect(await response.text()).toContain("Order API v2");
+  });
+
+  it("answers 400 for a malformed URL and keeps serving", async () => {
+    const url = await dev(repo(), 47351);
+    expect((await fetch(new URL("/%", url))).status).toBe(400);
+    expect((await fetch(url)).status).toBe(200);
+  });
+});
+
+describe("fsUrl", () => {
+  it("builds the Vite /@fs URL of a POSIX path and of a Windows path", () => {
+    expect(fsUrl("/home/roaster/docs engine/client.ts", false)).toBe("/@fs/home/roaster/docs%20engine/client.ts");
+    expect(fsUrl("C:\\Users\\roaster\\engine\\client.ts", true)).toBe("/@fs/C:/Users/roaster/engine/client.ts");
   });
 });
 

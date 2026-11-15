@@ -10,6 +10,8 @@ const TOP = 48;
 const H = 48;
 const MIN_W = 96;
 const LINE = 11;
+const MARGIN = 24;
+const GROUP_PAD = 14;
 
 interface Box {
   x: number;
@@ -26,16 +28,16 @@ interface Placed extends Box {
 }
 
 export function renderFlow(flow: Flow, context: RenderContext): string {
-  const nodes = Object.entries(flow.nodes).map(([id, node]) => place(id, node));
+  const nodes = shiftRight(Object.entries(flow.nodes).map(([id, node]) => place(id, node)));
   const byId = new Map(nodes.map((placed) => [placed.id, placed]));
   const groups = new Map(
     Object.entries(flow.groups ?? {}).map(([id, group]) => [id, { label: group.label, ...groupBox(id, nodes, flow.edges, byId) }]),
   );
-  const width = Math.max(...nodes.map((n) => n.x + n.w), ...[...groups.values()].map((g) => g.x + g.w)) + 24;
-  const height = Math.max(...nodes.map((n) => n.y + n.h), ...[...groups.values()].map((g) => g.y + g.h)) + 24;
+  const width = Math.max(...nodes.map((n) => n.x + n.w), ...[...groups.values()].map((g) => g.x + g.w)) + MARGIN;
+  const height = Math.max(...nodes.map((n) => n.y + n.h), ...[...groups.values()].map((g) => g.y + g.h)) + MARGIN;
   const edges = flow.edges.map((edge) => drawEdge(edge, byId, groups));
-  const arrow = `${context.id}-arrow`;
-  const rows = nodes.filter(({ node }) => hasRow(node));
+  const arrow = context.anchor(`${context.id}-arrow`);
+  const rows = new Map(nodes.filter(({ node }) => hasRow(node)).map((placed) => [placed, context.anchor(`${context.id}-${placed.id}`)]));
 
   const svg =
     `<svg viewBox="0 0 ${width} ${height}" aria-hidden="true">` +
@@ -47,14 +49,15 @@ export function renderFlow(flow: Flow, context: RenderContext): string {
     `<g class="docs-flow-edge-labels">${edges.map((e) => e.label).join("")}</g>` +
     `</svg>`;
 
-  const cards = nodes.map((placed) => card(placed, width, height, target(placed, context))).join("");
+  const cards = nodes.map((placed) => card(placed, width, height, target(placed, context, rows.get(placed)))).join("");
   return (
     `<figure class="docs-flow-figure">` +
     `<figcaption>${esc(flow.title)}</figcaption>` +
     `<div class="docs-flow-scroll"><docs-flow role="group" aria-label="${esc(flow.title)}" style="aspect-ratio:${width}/${height};--w:${width}">${svg}${cards}</docs-flow></div>` +
+    connections(flow) +
     legend(flow, groups.size > 0) +
     `</figure>` +
-    (rows.length > 0 ? detailsTable(rows, context) : "")
+    (rows.size > 0 ? detailsTable(rows) : "")
   );
 }
 
@@ -66,11 +69,16 @@ function place(id: string, node: FlowNode): Placed {
   return { id, node, w, h: H, cx, cy: y + H / 2, x: cx - w / 2, y };
 }
 
+function shiftRight(nodes: Placed[]): Placed[] {
+  const dx = Math.max(0, MARGIN + GROUP_PAD - Math.min(...nodes.map((n) => n.x)));
+  return dx === 0 ? nodes : nodes.map((n) => ({ ...n, x: n.x + dx, cx: n.cx + dx }));
+}
+
 function groupBox(id: string, nodes: Placed[], edges: FlowEdge[], byId: Map<string, Placed>): Box {
   const members = nodes.filter(({ node }) => node.group === id);
   const sources = edges.flatMap((edge) => (edge.to === id ? (byId.get(edge.from) ?? []) : []));
-  const left = Math.min(...members.map((n) => n.x), ...sources.map((n) => n.cx - 48)) - 14;
-  const right = Math.max(...members.map((n) => n.x + n.w), ...sources.map((n) => n.cx + 48)) + 14;
+  const left = Math.min(...members.map((n) => n.x), ...sources.map((n) => n.cx - 48)) - GROUP_PAD;
+  const right = Math.max(...members.map((n) => n.x + n.w), ...sources.map((n) => n.cx + 48)) + GROUP_PAD;
   const top = Math.min(...members.map((n) => n.y)) - 34;
   const bottom = Math.max(...members.map((n) => n.y + n.h)) + 18;
   return { x: left, y: top, w: right - left, h: bottom - top };
@@ -139,9 +147,9 @@ function hasRow(node: FlowNode): boolean {
   return node.description !== undefined || (node.details !== undefined && Object.keys(node.details).length > 0);
 }
 
-function target(placed: Placed, context: RenderContext): { href?: string; hint: string } {
+function target(placed: Placed, context: RenderContext, row: string | undefined): { href?: string; hint: string } {
   if (placed.node.href !== undefined) return { href: context.href(placed.node.href), hint: "Click to open the page" };
-  if (hasRow(placed.node)) return { href: `#${context.id}-${placed.id}`, hint: "Click to go to its row below" };
+  if (row !== undefined) return { href: `#${row}`, hint: "Click to go to its row below" };
   return { hint: "" };
 }
 
@@ -172,15 +180,24 @@ function detailsList(node: FlowNode): string {
   return `<dl>${entries.map(([term, text]) => `<dt>${esc(term)}</dt><dd>${esc(text)}</dd>`).join("")}</dl>`;
 }
 
-function detailsTable(rows: Placed[], context: RenderContext): string {
-  const body = rows
+function detailsTable(rows: Map<Placed, string>): string {
+  const body = [...rows]
     .map(
-      ({ id, node }) =>
-        `<tr id="${esc(`${context.id}-${id}`)}"><td>${esc(node.label)}</td><td>${KINDS[node.kind]}</td>` +
+      ([{ node }, row]) =>
+        `<tr id="${esc(row)}"><td>${esc(node.label)}</td><td>${KINDS[node.kind]}</td>` +
         `<td>${node.description === undefined ? "" : `<p>${esc(node.description)}</p>`}${detailsList(node)}</td></tr>`,
     )
     .join("");
   return `<table class="docs-flow-details"><thead><tr><th>Node</th><th>Kind</th><th>Description</th></tr></thead><tbody>${body}</tbody></table>`;
+}
+
+function connections(flow: Flow): string {
+  const name = (id: string) => flow.nodes[id]?.label ?? flow.groups?.[id]?.label ?? id;
+  const items = flow.edges.map((edge) => {
+    const label = [edge.label, edge.side ? "side path" : undefined].filter(Boolean).join(", ");
+    return `<li>${esc(`${name(edge.from)} to ${name(edge.to)}${label ? `: ${label}` : ""}`)}</li>`;
+  });
+  return items.length > 0 ? `<ul class="docs-flow-connections" aria-label="Connections">${items.join("")}</ul>` : "";
 }
 
 function legend(flow: Flow, hasGroups: boolean): string {
