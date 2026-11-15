@@ -1,4 +1,4 @@
-import { ASSETS_DIR } from "../../site/layout.ts";
+import { ASSETS_DIR, MANIFEST, NOT_FOUND } from "../../site/layout.ts";
 import type { RepoPath, Route } from "../../site/types.ts";
 import type { Rule } from "../types.ts";
 
@@ -14,8 +14,8 @@ export const routes: Rule = {
         found.push({ file: page.path, message: "a folder or file name gives an empty, `.` or `..` route segment: rename it" });
       }
       const segments = page.route?.split("/").filter(Boolean) ?? [];
-      if (segments.includes("index.html") || segments[0] === "404.html") {
-        found.push({ file: page.path, message: "a folder or file name gives the route segment `index.html` or a first segment `404.html`, which are files of the build: rename it" });
+      if (segments.includes("index.html") || segments[0] === NOT_FOUND || segments[0] === MANIFEST) {
+        found.push({ file: page.path, message: `a folder or file name gives the route segment \`index.html\`, or a first segment \`${NOT_FOUND}\` or \`${MANIFEST}\`, which are files of the build: rename it` });
       }
       if (page.route?.startsWith(`/${ASSETS_DIR}/`)) {
         found.push({ file: page.path, message: `the route \`/${ASSETS_DIR}/\` holds the client files of the build: rename the folder` });

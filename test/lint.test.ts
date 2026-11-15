@@ -85,7 +85,8 @@ describe("lint", () => {
   });
 
   it("routes: reports a name that is also a file name in the build", () => {
-    expect(findings({ "docs/guides/index.html/README.md": "# Index\n", "docs/404.html/README.md": "# Missing\n" })).toEqual([
+    expect(findings({ "docs/guides/index.html/README.md": "# Index\n", "docs/404.html/README.md": "# Missing\n", "docs/.docs-engine-manifest.json/README.md": "# List\n" })).toEqual([
+      { rule: "routes", severity: "error", file: "docs/.docs-engine-manifest.json/README.md", line: undefined },
       { rule: "routes", severity: "error", file: "docs/404.html/README.md", line: undefined },
       { rule: "routes", severity: "error", file: "docs/guides/index.html/README.md", line: undefined },
     ]);

@@ -5,18 +5,17 @@ import { build } from "vite";
 import { hasErrors, lint } from "./lint/index.ts";
 import { CLIENT_ENTRY, ENGINE_ROOT } from "./paths.ts";
 import { notFound, renderPage } from "./render/site.ts";
-import { ASSETS_DIR } from "./site/layout.ts";
+import { ASSETS_DIR, MANIFEST, NOT_FOUND } from "./site/layout.ts";
 import { loadSite } from "./site/load.ts";
 import type { Finding } from "./site/types.ts";
 
 const HEAD = `<link rel="stylesheet" href="/${ASSETS_DIR}/client.css">\n<script type="module" src="/${ASSETS_DIR}/client.js"></script>`;
-const MANIFEST = ".docs-engine-manifest.json";
 
 export async function buildSite(options: { root: string; out: string }): Promise<{ findings: Finding[]; pages: number }> {
   const site = loadSite(options.root);
   const findings = lint(site);
   if (hasErrors(findings)) return { findings, pages: 0 };
-  const files = new Map<string, string | Buffer>([["404.html", notFound(site, HEAD)]]);
+  const files = new Map<string, string | Buffer>([[NOT_FOUND, notFound(site, HEAD)]]);
   for (const page of site.routes.values()) {
     files.set(posix.join(...(page.route ?? "/").split("/").filter(Boolean), "index.html"), renderPage(site, page, HEAD));
   }

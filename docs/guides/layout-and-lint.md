@@ -23,7 +23,7 @@ The engine reads "nothing else at the top of `docs/`" like this: each page is in
 | Rule | Severity | What it checks |
 | --- | --- | --- |
 | `layout` | error | `README.md`, `GLOSSARY.md` and `AGENTS.md` exist. `docs/adr/`, `docs/research/` and `docs/agents/` exist. No page is directly in `docs/`. |
-| `routes` | error | Each page has its own route. No folder or file name gives an empty, `.` or `..` route segment. No route starts with `/assets/`, because the build writes the client files there. No route has a segment named index.html or starts with `/404.html/`, because the build writes those file names. |
+| `routes` | error | Each page has its own route. No folder or file name gives an empty, `.` or `..` route segment. No route starts with `/assets/`, because the build writes the client files there. No route has a segment named index.html, or starts with `/404.html/` or `/.docs-engine-manifest.json/`, because the build writes those file names. |
 | `links` | error | Each relative link goes to a file that exists. Each link to a heading goes to a heading that exists. The rule does not check `http:`, `https:` or `mailto:` links. |
 | `code-paths` | error | Each inline code span that looks like a repo path exists. |
 | `diagrams` | error | Each diagram block parses, has a known type, passes the schema of its type and passes the check of its type. |
