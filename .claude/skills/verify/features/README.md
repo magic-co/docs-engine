@@ -17,7 +17,7 @@ This directory is the maintained source to verify the user-facing behavior of do
 - Treat each command, label and file name as literal.
 - Run browser actions with `control-docs browse <label> <steps>`.
 - Run terminal actions with `control-docs cli <label> <docs arguments>`.
-- Change files only in the site copy. Restore each change after the recipe, or run `stop` and `start` again.
+- Change files only in the site copy. After the recipe, run `control-docs restore <path>...` for each changed or new path, or run `stop` and `start` again. `restore` copies the path back from the baseline that `start` saved, so uncommitted changes in the checkout stay. Do not restore with `git show HEAD`.
 - Keep the proof artifacts during cleanup.
 
 ## Proof and skip reporting

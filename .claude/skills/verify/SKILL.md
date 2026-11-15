@@ -101,6 +101,14 @@ The stable handles of the site:
 - The open hover card is `ui-hover-card-content:not([hidden])`. It holds the kind, the label, the description, the details and a hint.
 - The details table is `table.docs-flow-details`. Each row has the id `<diagram id>-<node id>`, such as `order-flow-roast`.
 
+### Restore the baseline
+
+```sh
+$S restore docs/guides/README.md docs/loose.md
+```
+
+`start` saves a second copy of the site as the baseline, at `$DOCS_VERIFY_RUN/instance/baseline/`. `restore` copies each path back from it, and removes a path that the baseline does not have. Paths are relative to the site copy. Use it after each fixture change.
+
 ### Static site
 
 ```sh
@@ -108,7 +116,7 @@ $S cli build-clean build
 $S static                        # prints the URL of the static server
 ```
 
-`static` serves `dist-site/` of the copy with `python3 -m http.server` on 127.0.0.1 and prints its URL. It accepts a port only while its own process answers, and tries up to 3 ports. Use that URL as an absolute `goto`. `browse` does not expand shell variables in the JSON, so put the URL into the steps with the shell. A second call prints the same URL.
+`static` serves `dist-site/` of the copy with a Python `http.server` on 127.0.0.1 and prints its URL. The server binds port 0, so the kernel gives it a free port that no other server shares. Use that URL as an absolute `goto`. `browse` does not expand shell variables in the JSON, so put the URL into the steps with the shell. A second call prints the same URL.
 
 ## Evidence
 

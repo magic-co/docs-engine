@@ -37,11 +37,12 @@ cmd_start() {
   (cd "$REPO" && git ls-files -z --cached --others --exclude-standard \
     | xargs -0 -I{} sh -c 'if [ -e "$1" ]; then printf "%s\0" "$1"; fi' _ {} \
     | tar --null -T - -cf - | tar -xf - -C "$run/instance/site")
+  cp -R "$run/instance/site" "$run/instance/baseline"
   port="${DOCS_VERIFY_PORT:-$(( 20000 + RANDOM % 20000 ))}"
   cd "$run/instance/site"
   nohup node "$REPO/dist/cli.js" dev --port "$port" >"$run/instance/dev.out" 2>"$run/instance/dev.err" </dev/null &
   echo $! >"$run/instance/dev.pid"
-  ps -o command= -p "$(cat "$run/instance/dev.pid")" >"$run/instance/dev.cmd"
+  save_cmd "$(cat "$run/instance/dev.pid")" "dist/cli.js dev" "$run/instance/dev.cmd"
   cd "$REPO"
   local url="" i
   for i in $(seq 1 60); do
@@ -121,31 +122,59 @@ cmd_browse() {
     node "$HERE/browse.cjs" "$EVIDENCE/$1" "$2"
 }
 
+cmd_restore() {
+  need_run
+  [ $# -ge 1 ] || die "usage: control-docs restore <path in the site copy>..."
+  local path
+  for path in "$@"; do
+    case "$path" in /*|..|../*|*/..|*/../*) die "give a path inside the site copy, not $path" ;; esac
+    rm -rf "${SITE:?}/$path"
+    if [ -e "$RUN/instance/baseline/$path" ]; then
+      mkdir -p "$(dirname "$SITE/$path")"
+      cp -R "$RUN/instance/baseline/$path" "$SITE/$path"
+      echo "restored $path"
+    else
+      echo "removed $path (not in the baseline)"
+    fi
+  done
+}
+
 cmd_static() {
   need_run
   [ -f "$SITE/dist-site/index.html" ] || die "$SITE/dist-site/index.html does not exist. Run 'control-docs cli <label> build' first."
   if owned "$RUN/instance/static.pid" "$RUN/instance/static.cmd"; then cat "$RUN/instance/static.url"; return; fi
-  local port try i pid
-  for try in 1 2 3; do
-    port="$(( 20000 + RANDOM % 20000 ))"; [ "$try" = 1 ] && port="${DOCS_VERIFY_STATIC_PORT:-$port}"
-    # http.server can share a port with another server (SO_REUSEPORT), so skip a port that already answers.
-    if curl -s -o /dev/null "http://127.0.0.1:$port/" 2>/dev/null; then continue; fi
-    nohup python3 -m http.server "$port" --bind 127.0.0.1 --directory "$SITE/dist-site" >"$RUN/instance/static.out" 2>"$RUN/instance/static.err" </dev/null &
-    pid=$!
-    echo "$pid" >"$RUN/instance/static.pid"
-    ps -o command= -p "$pid" >"$RUN/instance/static.cmd"
-    for i in $(seq 1 40); do
-      # A response only counts while our process lives. When the port is taken, python3 exits at once.
-      kill -0 "$pid" 2>/dev/null || break
-      if curl -fsS "http://127.0.0.1:$port/" >/dev/null 2>&1 && kill -0 "$pid" 2>/dev/null; then
-        echo "http://127.0.0.1:$port" | tee "$RUN/instance/static.url"
-        return
-      fi
-      sleep 0.25
-    done
-    stop_pid "$RUN/instance/static.pid" "$RUN/instance/static.cmd"
+  local port="" i pid
+  # Port 0 lets the kernel pick a free port, so no other server can share it.
+  nohup python3 -c 'import functools, http.server, sys
+handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=sys.argv[1])
+server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), handler)
+print(server.server_address[1], flush=True)
+server.serve_forever()' "$SITE/dist-site" >"$RUN/instance/static.out" 2>"$RUN/instance/static.err" </dev/null &
+  pid=$!
+  echo "$pid" >"$RUN/instance/static.pid"
+  save_cmd "$pid" "http.server" "$RUN/instance/static.cmd"
+  for i in $(seq 1 40); do
+    port="$(head -1 "$RUN/instance/static.out")"
+    [ -n "$port" ] && curl -fsS "http://127.0.0.1:$port/" >/dev/null 2>&1 && break
+    port=""
+    sleep 0.25
   done
-  die "the static server did not start after 3 ports. See $RUN/instance/static.err."
+  if [ -z "$port" ]; then
+    stop_pid "$RUN/instance/static.pid" "$RUN/instance/static.cmd"
+    die "the static server did not answer in 10 s. See $RUN/instance/static.err."
+  fi
+  echo "http://127.0.0.1:$port" | tee "$RUN/instance/static.url"
+}
+
+# Waits until the pid runs the real command, not the nohup that starts it, and saves that command line.
+save_cmd() {
+  local cmd="" i
+  for i in $(seq 1 40); do
+    cmd="$(ps -o command= -p "$1" 2>/dev/null || true)"
+    case "$cmd" in *"$2"*) break ;; esac
+    sleep 0.05
+  done
+  printf '%s\n' "$cmd" >"$3"
 }
 
 # A saved pid is ours only while it runs the command that we saved at launch. This guards against pid reuse.
@@ -162,7 +191,7 @@ stop_pid() {
   for child in $(pgrep -P "$pid" 2>/dev/null || true); do kill "$child" 2>/dev/null || true; done
   kill "$pid" 2>/dev/null || true
   for _ in $(seq 1 20); do kill -0 "$pid" 2>/dev/null || break; sleep 0.25; done
-  kill -0 "$pid" 2>/dev/null && kill -9 "$pid" 2>/dev/null || true
+  if owned "$1" "$2"; then kill -9 "$pid" 2>/dev/null || true; fi
 }
 
 cmd_stop() {
@@ -181,6 +210,7 @@ case "${1:-}" in
   cli) shift; cmd_cli "$@" ;;
   browse) shift; cmd_browse "$@" ;;
   static) shift; cmd_static "$@" ;;
+  restore) shift; cmd_restore "$@" ;;
   stop) shift; cmd_stop "$@" ;;
-  *) echo "usage: control-docs start | doctor | cli <label> <docs args...> | browse <label> <steps.json|-> | static | stop"; exit 1 ;;
+  *) echo "usage: control-docs start | doctor | cli <label> <docs args...> | browse <label> <steps.json|-> | static | restore <path>... | stop"; exit 1 ;;
 esac
