@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "A flow diagram: nodes on a grid, optional groups, and edges between them",
+  "type": "object",
+  "required": ["title", "nodes", "edges"],
+  "additionalProperties": false,
+  "properties": {
+    "title": { "type": "string", "minLength": 1 },
+    "nodes": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "required": ["label", "kind", "at"],
+        "additionalProperties": false,
+        "properties": {
+          "label": { "type": "string", "minLength": 1 },
+          "kind": { "enum": ["start", "step", "decision", "end", "goal"] },
+          "at": {
+            "description": "The grid cell: [column, row], from 0.",
+            "type": "array",
+            "items": { "type": "number", "minimum": 0 },
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "group": { "type": "string" },
+          "description": { "type": "string" },
+          "details": {
+            "description": "Labelled facts in order, such as Entry and Exit.",
+            "type": "object",
+            "additionalProperties": { "type": "string" }
+          },
+          "href": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "groups": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["label"],
+        "additionalProperties": false,
+        "properties": { "label": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["from", "to"],
+        "additionalProperties": false,
+        "properties": {
+          "from": { "type": "string", "description": "A node id." },
+          "to": { "type": "string", "description": "A node id or a group id." },
+          "label": { "type": "string" },
+          "side": { "type": "boolean", "description": "The edge leaves the main path. It is drawn dashed." }
+        }
+      }
+    }
+  }
+}

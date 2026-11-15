@@ -39,3 +39,7 @@ export function diagramBlocks(tree: Root): DiagramBlock[] {
   });
   return blocks;
 }
+
+export function anchors(tree: Root): Set<string> {
+  return new Set(headingSlugs(tree).values());
+}
