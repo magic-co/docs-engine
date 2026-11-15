@@ -23,7 +23,7 @@ npm install --save-dev @magic-co/docs-engine
 | --- | --- |
 | `docs dev [--root .] [--port N]` | Serves the site on 127.0.0.1 and reloads the browser when a page changes. |
 | `docs build [--root .] [--out dist-site]` | Writes static HTML for each page. Removes the pages that it wrote before for deleted sources, and keeps other files. Stops with exit code 1 when the lint finds an error, and then does not change the output folder. |
-| `docs lint [--root .]` | Checks the layout, the links, the code paths, the diagrams and the generated pages. |
+| `docs lint [--root .]` | Checks the layout, the links, the code paths, the diagrams, the figures and the generated pages. |
 
 `docs dev` uses the `--port` value, then the `PORT` variable, then port 4173. When the port is in use, it uses the next free port. It prints the URL.
 
@@ -43,7 +43,7 @@ docs/agents/       agent notes (not in the site)
 docs/<section>/    other sections
 ```
 
-Read [the layout and the lint rules](docs/guides/layout-and-lint.md) for the full rules. Read [write pages](docs/guides/writing-pages.md) for pages and navigation. Read [the flow diagram](docs/diagrams/flow.md) for diagrams.
+Read [the layout and the lint rules](docs/guides/layout-and-lint.md) for the full rules. Read [write pages](docs/guides/writing-pages.md) for pages and navigation. Read [the flow diagram](docs/diagrams/flow.md) and [the figure](docs/diagrams/figure.md) for diagrams.
 
 ## Configuration
 
@@ -58,6 +58,7 @@ Read [the layout and the lint rules](docs/guides/layout-and-lint.md) for the ful
 
 - `title` is the site title. Without it, the site title is the first heading of `README.md`.
 - `lint.ignorePaths` holds globs. The `code-paths` rule does not check a code span that matches one of them.
+- `lint.ignorePages` holds globs of page paths. The `code-paths` rule does not check the pages that match one of them.
 
 ## Work on the engine
 
