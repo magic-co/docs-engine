@@ -4,7 +4,8 @@ import { describe, expect, it } from "vitest";
 
 const read = (path: string) => readFileSync(join(import.meta.dirname, "../components", path), "utf8");
 const css = read("site/site.css") + read("flow/flow.css");
-const tokens = new Map([...css.matchAll(/(--[\w-]+):\s*(#[\da-f]{6})\b/gi)].map((match) => [match[1]!, match[2]!]));
+const NO_TEXT = new Set(["none", "transparent", "inherit", "currentcolor"]);
+const SHAPE = /(rect|polygon|\.docs-flow-group)$/;
 
 function luminance(hex: string): number {
   const [r, g, b] = [1, 3, 5].map((i) => {
@@ -19,16 +20,43 @@ function contrast(a: string, b: string): number {
   return (light! + 0.05) / (dark! + 0.05);
 }
 
-const textColors = [...css.matchAll(/([^{}]+)\{([^}]*)\}/g)].flatMap(([, selector, body]) =>
-  [...body!.matchAll(/(?:^|[;\s])(color|fill):\s*var\((--[\w-]+)\)/g)]
-    .filter(([, property]) => property === "color" || !/(rect|polygon)\s*$/.test(selector!.trim()))
-    .map(([, , token]) => ({ selector: selector!.trim(), token: token! })),
-);
+function longHex(value: string): string | undefined {
+  if (/^#[\da-f]{6}$/i.test(value)) return value;
+  if (/^#[\da-f]{3}$/i.test(value)) return `#${[...value.slice(1)].map((c) => c + c).join("")}`;
+  return undefined;
+}
+
+function textColors(source: string): { selector: string; value: string; color?: string }[] {
+  const tokens = new Map([...source.matchAll(/(--[\w-]+):\s*(#[\da-f]{3,6})\b/gi)].map((match) => [match[1]!, longHex(match[2]!)]));
+  return [...source.matchAll(/([^{}]+)\{([^}]*)\}/g)].flatMap(([, selector, body]) =>
+    [...body!.matchAll(/(?:^|[;\s])(color|fill):\s*([^;}]+?)\s*(?:;|$)/g)]
+      .filter(([, property, value]) => !NO_TEXT.has(value!.toLowerCase()) && (property === "color" || !SHAPE.test(selector!.trim())))
+      .map(([, , value]) => {
+        const token = /^var\((--[\w-]+)\)$/.exec(value!)?.[1];
+        return { selector: selector!.trim(), value: value!, color: token ? tokens.get(token) : longHex(value!) };
+      }),
+  );
+}
+
+function readable(source: string): (entry: { color?: string }) => boolean {
+  const backgrounds = ["--paper", "--card"].map((token) => textColors(`a { color: var(${token}) }${source}`)[0]!.color);
+  return ({ color }) => color !== undefined && backgrounds.every((background) => background !== undefined && contrast(color, background) >= 4.5);
+}
 
 describe("text colors", () => {
-  it.each(textColors)("$selector uses $token with a contrast of 4.5:1 or more on the page and on a card", ({ token }) => {
-    const color = tokens.get(token);
-    expect(color, token).toBeDefined();
-    for (const background of ["--paper", "--card"]) expect(contrast(color!, tokens.get(background)!)).toBeGreaterThanOrEqual(4.5);
+  const ok = readable(css);
+
+  it.each(textColors(css))("$selector uses $value with a contrast of 4.5:1 or more on the page and on a card", (entry) => {
+    expect(ok(entry), entry.value).toBe(true);
+  });
+
+  it("checks literal colors as well as tokens", () => {
+    const sample = ":root { --paper: #ffffff; --card: #fff; --ink: #222; }\n.a { color: #bbb; }\n.b { color: var(--ink); }\n.c { color: #111111; }\n.d { color: red; }";
+    expect(textColors(sample).map((entry) => [entry.selector, readable(sample)(entry)])).toEqual([
+      [".a", false],
+      [".b", true],
+      [".c", true],
+      [".d", false],
+    ]);
   });
 });
