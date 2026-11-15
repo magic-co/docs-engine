@@ -1,5 +1,5 @@
 import { type ChildProcess, spawn, spawnSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createServer, type Server } from "node:net";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -58,6 +58,28 @@ describe("docs CLI", () => {
     expect(existsSync(join(out, "research/index.html"))).toBe(true);
     expect(existsSync(join(out, "agents"))).toBe(false);
     expect(existsSync(join(out, "assets/client.js")) && existsSync(join(out, "assets/client.css"))).toBe(true);
+  });
+
+  it("build removes the pages of deleted sources and keeps other files", () => {
+    const root = repo();
+    const out = join(root, "site-out");
+    expect(docs("build", "--root", root, "--out", out).status).toBe(0);
+    writeFileSync(join(out, "keep.txt"), "mine");
+    rmSync(join(root, "docs/guides/cupping.md"));
+    expect(docs("build", "--root", root, "--out", out).status).toBe(0);
+    expect(existsSync(join(out, "guides/cupping"))).toBe(false);
+    expect(existsSync(join(out, "guides/brewing/index.html"))).toBe(true);
+    expect(readFileSync(join(out, "keep.txt"), "utf8")).toBe("mine");
+  });
+
+  it("build leaves an earlier output as it is when lint has errors", () => {
+    const root = repo();
+    const out = join(root, "site-out");
+    expect(docs("build", "--root", root, "--out", out).status).toBe(0);
+    rmSync(join(root, "docs/guides/cupping.md"));
+    writeFileSync(join(root, "docs/guides/brewing.md"), "# Brew\n\n[gone](gone.md)\n");
+    expect(docs("build", "--root", root, "--out", out).status).toBe(1);
+    expect(existsSync(join(out, "guides/cupping/index.html"))).toBe(true);
   });
 
   it("build exits 1 and writes nothing when lint has errors", () => {
