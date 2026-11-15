@@ -109,6 +109,6 @@ describe("figure", () => {
   it("reads the text, the labels and the entities of the html", () => {
     expect(figureText(DRAWN)).toBe("Pack bag We Ship & done. Order placed, then Roast batch");
     expect(figureText(`<p>a<script>no</script><style>no</style> b</p>`)).toBe("a b");
-    expect(figureText(`<p>Roast&hellip; &eacute;&#x110000;&#xD800; &constructor; &nope;</p>`)).toBe("Roast\u2026 \u00e9\uFFFD\uFFFD &constructor; &nope;");
+    expect(figureText(`<p>Roast&hellip; &eacute;&#x110000;&#xD800;&#1114112;&#55296;&#233; &constructor; &nope;</p>`)).toBe("Roast\u2026 \u00e9\uFFFD\uFFFD\uFFFD\uFFFD\u00e9 &constructor; &nope;");
   });
 });
