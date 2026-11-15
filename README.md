@@ -4,7 +4,14 @@ docs-engine turns the Markdown files and `yaml` diagram blocks of a repo into a 
 
 ## Install
 
-The engine needs Node 24 or later.
+The engine needs Node 24 or later. The package is in GitHub Packages. GitHub Packages needs a token for each install, also for a public package. Add this `.npmrc` to the repo:
+
+```ini
+@magic-co:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
+```
+
+Set `NODE_AUTH_TOKEN` to a GitHub token that can read packages. In GitHub Actions, use `secrets.GITHUB_TOKEN` with the `packages: read` permission. Then install:
 
 ```sh
 npm install --save-dev @magic-co/docs-engine
@@ -66,9 +73,9 @@ npm run build      # compile to dist/
 
 ## Releases
 
-To release, change `version` in `package.json` in a pull request. When the pull request merges, the `release` workflow publishes that version to npm and pushes the tag `v<version>`. When npm already has the version, the workflow publishes nothing.
+To release, change `version` in `package.json` in a pull request. When the pull request merges, the `release` workflow publishes that version to GitHub Packages and pushes the tag `v<version>`. When the registry already has the version, the workflow publishes nothing.
 
-The workflow uses npm trusted publishing (OIDC), so the repo holds no npm token. npm adds a provenance statement to each version.
+The workflow uses the `GITHUB_TOKEN` of the run, so the repo holds no npm token.
 
 ## License
 

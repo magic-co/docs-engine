@@ -1,5 +1,5 @@
-# Publish the package to npm when main has a version that npm does not have.
-# npm trusted publishing (OIDC) gives the credentials and the provenance. The repo holds no npm token.
+# Publish the package to GitHub Packages when main has a version that the registry does not have.
+# The GITHUB_TOKEN of the run gives the credentials, so the repo holds no npm token.
 name: release
 
 on:
@@ -19,21 +19,23 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      id-token: write
+      packages: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-          registry-url: https://registry.npmjs.org
+          registry-url: https://npm.pkg.github.com
       - id: version
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           name=$(node -p "require('./package.json').name")
           version=$(node -p "require('./package.json').version")
           echo "version=$version" >> "$GITHUB_OUTPUT"
           if npm view "$name@$version" version >/dev/null 2>&1; then
             echo "new=false" >> "$GITHUB_OUTPUT"
-            echo "$name@$version is on npm. Nothing to publish."
+            echo "$name@$version is in the registry. Nothing to publish."
           else
             echo "new=true" >> "$GITHUB_OUTPUT"
           fi
@@ -48,6 +50,8 @@ jobs:
       - if: steps.version.outputs.new == 'true'
         run: node dist/cli.js lint
       - if: steps.version.outputs.new == 'true'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm publish
       - name: Tag the version
         env:
