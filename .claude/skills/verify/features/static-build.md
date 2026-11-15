@@ -28,6 +28,7 @@ Preconditions:
 - **Other out folder.** Run `control-docs cli build-out build --out out-site`. The pages are in `$DOCS_VERIFY_RUN/instance/site/out-site/`.
 - **Client.** Run `control-docs static` and keep its URL as `$SU`. Run `browse` with `{"goto": "$SU/diagrams/flow/"}`, `{"hover": {"node": "Roast batch"}}` and `{"expectVisible": {"css": "ui-hover-card-content:not([hidden])", "hasText": "The beans are weighed."}}`. The card opens as in `docs dev`.
 - **Stop on error.** Run `printf '# Loose\n' > "$DOCS_VERIFY_RUN/instance/site/docs/loose.md"`, `rm -rf "$DOCS_VERIFY_RUN/instance/site/dist-site"` and `control-docs cli build-error build`. The exit code is 1. stdout has the `layout` finding and no `docs: wrote` line. `dist-site/` does not exist.
+- **Old output after a failed build.** Run `control-docs cli build-good build --out out-site`. Then add the loose page as above and run `control-docs cli build-stale build --out out-site`. The exit code is 1, and the old pages from the good build stay in `out-site/`. The engine does not remove old output when the lint fails.
 - **Proof.** The CLI evidence of each label, the `find` list, and `steps.log` with a screenshot of the static flow page.
 
 ## Gotchas
@@ -35,4 +36,5 @@ Preconditions:
 - `python3 -m http.server` does not serve `404.html` for a missing route. A 404 status with a plain error page is the server, not the engine. Check `404.html` as a file.
 - The page links and the assets use absolute paths such as `/assets/client.js`. Serve `dist-site/` at the root of a server. A `file://` URL does not work.
 - `--out` is relative to the working directory. The helper runs in the site copy, so the output stays in the copy.
+- A failed build leaves an old output folder in place. Remove the output folder before a "no pages" check, or you see stale pages. Whether this is the intended behavior is an open question for the team.
 - `rm` in the site copy is safe. It is a disposable copy, and `stop` removes it.

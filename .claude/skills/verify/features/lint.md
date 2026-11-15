@@ -34,8 +34,10 @@ Preconditions:
   - `docs/guides/README.md:<line> code-paths `src/missing.ts` does not exist in the repo`
   - `docs/guides/log.md:1 generated the page was edited by hand: its sha256 does not match. Run `roast-log` again`
   - The last line is `docs: 5 errors, <n> warnings`.
+- **Missing top-level file.** Run `mv "$DOCS_VERIFY_RUN/instance/site/GLOSSARY.md" "$DOCS_VERIFY_RUN/instance/site/GLOSSARY.md.off"`, then `control-docs cli lint-layout-missing lint`. The exit code is 1. stdout has `GLOSSARY.md layout the file `GLOSSARY.md` must exist`. Move the file back.
+- **New glossary warning.** Run `printf '\nEach batch goes to the Kiln room.\n\nThe beans rest in the Kiln room.\n' >> "$DOCS_VERIFY_RUN/instance/site/docs/guides/writing-pages.md"`, then `control-docs cli lint-glossary lint`. The exit code is 0. stdout has a new line `docs/guides/writing-pages.md:<line> glossary "Kiln" looks like a term (2 places), but GLOSSARY.md does not define it`, and the warning count is one more than the baseline.
 - **Diagram error.** Run `sed -i.bak 's/from: pack, to: ship }/from: pack, to: nowhere }/' "$DOCS_VERIFY_RUN/instance/site/docs/diagrams/flow.md"`, then `control-docs cli lint-diagram lint`. stdout has `docs/diagrams/flow.md:9 diagrams edge 7 goes to `nowhere`, which is not a node or a group`.
-- **Warnings only.** Restore the copy with `stop` and `start`. Run `control-docs cli lint-warnings lint`. The exit code is 0 although stdout has `glossary` warnings.
+- **Warnings only.** Restore the copy. Run `stop` and `start`, or copy the changed files back from a copy that you made before the break. Run `control-docs cli lint-warnings lint`. The exit code is 0 although stdout has `glossary` warnings.
 - **Proof.** The `command.txt`, `stdout.txt`, `stderr.txt` and `exit-code.txt` of each label.
 
 ## Gotchas
@@ -43,4 +45,7 @@ Preconditions:
 - The copy must hold every file of the checkout. A copy without `src/` or `.claude/skills/` gives false `code-paths` errors for the paths that the docs name.
 - The order of the findings is by file, not by rule. Assert each line, not the order.
 - A hash of the wrong length gives a different message: "the generated mark must be ...". Use 64 hex digits to test the hash check.
+- A missing top-level file also gives `code-paths` and `links` errors for each mention of it. The `layout` line is the root cause. The other lines are correct.
+- The summary line does not use the singular: one error prints `docs: 1 errors`. Assert the number, not the grammar.
+- The `glossary` rule counts places by file and line. Two mentions on one line are one place. A capitalized word right after the start of a sentence joins the first word, such as "The Kiln", and the rule skips it. Put each mention on its own line, after a lowercase word.
 - The `glossary` rule only warns. The baseline has some warnings, so do not expect an empty stdout.
