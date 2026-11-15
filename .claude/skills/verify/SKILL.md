@@ -98,6 +98,7 @@ The stable handles of the site:
 - The nav is `navigation "Docs"`. The current page link has `aria-current="page"`.
 - The page body is `main` > `article`. The footer has the `Research` link when `docs/research/` exists.
 - A flow diagram is `figure` > `group "<title>"`. Each node is `docs-flow-node[value=<id>][data-kind=<kind>]` with one `link "<label>"` inside.
+- A figure is `div.docs-figure`. Its content comes from the module, so use the roles and the classes that the module writes, such as `img "The order flow as a line of machines"` and `.roast-line-step-name`.
 - The open hover card is `ui-hover-card-content:not([hidden])`. It holds the kind, the label, the description, the details and a hint.
 - The details table is `table.docs-flow-details`. Each row has the id `<diagram id>-<node id>`, such as `order-flow-roast`.
 
@@ -141,4 +142,4 @@ $S stop
 
 ## Maintain
 
-Keep this skill and its feature map current with `/maintain-verification-skill`. Run it after a change to a user-facing part of the engine: a CLI command or flag, a route rule, a lint rule, a diagram type or a client component.
+Keep this skill and its feature map current with `/maintain-verification-skill`. Run it after a change to a user-facing part of the engine: a CLI command or flag, a route rule, a lint rule or a config option, a diagram type, a figure, the files that `docs dev` watches, or a client component.

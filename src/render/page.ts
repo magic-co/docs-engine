@@ -5,8 +5,10 @@ import remarkRehype from "remark-rehype";
 import { unified } from "unified";
 import { SKIP, visit } from "unist-util-visit";
 import { checkDiagram, type Problem } from "../diagrams/index.ts";
+import type { RenderContext } from "../diagrams/types.ts";
+import { repoFile } from "../site/files.ts";
 import { resolveLink } from "../site/links.ts";
-import { diagramType, headingSlugs } from "../site/markdown.ts";
+import { diagramIds, diagramType, headingSlugs } from "../site/markdown.ts";
 import type { Page, Site } from "../site/types.ts";
 import { routeUrl } from "../site/url.ts";
 import { esc } from "./html.ts";
@@ -17,26 +19,26 @@ export function renderContent(site: Site, page: Page): string {
   const tree = structuredClone(page.tree);
   const slugger = new GithubSlugger();
   for (const [heading, id] of headingSlugs(tree, slugger)) heading.data = { ...heading.data, hProperties: { id } };
+  const ids = diagramIds(tree, slugger);
   const href = (url: string) => linkHref(site, page, url);
   visit(tree, (node, index, parent) => {
     if (node.type === "link" || node.type === "definition") node.url = href(node.url);
     if (node.type !== "code" || !parent || index === undefined) return;
     const type = diagramType(node);
     if (!type) return;
-    const html: RootContent = { type: "html", value: renderDiagram(node, type, slugger, href) };
+    const file = (path: string) => repoFile(site.root, page.path, path);
+    const html: RootContent = { type: "html", value: renderDiagram(node, type, ids.get(node), slugger, { root: site.root, href, file }) };
     (parent.children as RootContent[]).splice(index, 1, html);
     return SKIP;
   });
   return toHtml.stringify(toHtml.runSync(tree as Root) as never);
 }
 
-function renderDiagram(node: Code, type: string, slugger: GithubSlugger, href: (url: string) => string): string {
+function renderDiagram(node: Code, type: string, id: string | undefined, slugger: GithubSlugger, links: Pick<RenderContext, "root" | "href" | "file">): string {
   const line = node.position?.start.line ?? 1;
   const checked = checkDiagram({ type, source: node.value, line });
-  if (!checked.ok) return diagramError(type, checked.problems, node.value);
-  const title = (checked.data as { title?: unknown }).title;
-  const id = slugger.slug(typeof title === "string" ? title : `${type}-diagram`);
-  return checked.type.render(checked.data, { id, href, anchor: (name) => slugger.slug(name) });
+  if (!checked.ok || id === undefined) return diagramError(type, checked.ok ? [] : checked.problems, node.value);
+  return checked.type.render(checked.data, { id, ...links, anchor: (name) => slugger.slug(name) });
 }
 
 function diagramError(type: string, problems: Problem[], source: string): string {

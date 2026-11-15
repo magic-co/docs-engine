@@ -1,10 +1,11 @@
 import { parseDocument } from "yaml";
 import { compileSchema, type Validator } from "../schema.ts";
 import type { DiagramBlock } from "../site/types.ts";
+import { figure } from "./figure/index.ts";
 import { flow } from "./flow/index.ts";
 import type { DiagramType } from "./types.ts";
 
-export const DIAGRAM_TYPES: Record<string, DiagramType<never>> = { flow };
+export const DIAGRAM_TYPES: Record<string, DiagramType<never>> = { flow, figure };
 
 export interface Problem {
   line: number;

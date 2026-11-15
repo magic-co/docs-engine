@@ -5,6 +5,7 @@ import remarkGfm from "remark-gfm";
 import remarkParse from "remark-parse";
 import { unified } from "unified";
 import { visit } from "unist-util-visit";
+import { checkDiagram } from "../diagrams/index.ts";
 import type { DiagramBlock } from "./types.ts";
 
 const parser = unified().use(remarkParse).use(remarkGfm);
@@ -24,6 +25,20 @@ export function headingSlugs(tree: Root, slugger = new GithubSlugger()): Map<Hea
     slugs.set(node, slugger.slug(toString(node)));
   });
   return slugs;
+}
+
+// The id of each valid diagram, slugged after the headings in page order. The renderer and the lint share this order.
+export function diagramIds(tree: Root, slugger: GithubSlugger): Map<Code, string> {
+  const ids = new Map<Code, string>();
+  visit(tree, "code", (node) => {
+    const type = diagramType(node);
+    if (!type) return;
+    const checked = checkDiagram({ type, source: node.value, line: node.position?.start.line ?? 1 });
+    if (!checked.ok) return;
+    const title = (checked.data as { title?: unknown }).title;
+    ids.set(node, slugger.slug(typeof title === "string" ? title : `${type}-diagram`));
+  });
+  return ids;
 }
 
 export function diagramType(node: Code): string | undefined {

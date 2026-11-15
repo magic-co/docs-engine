@@ -27,6 +27,7 @@ The engine reads "nothing else at the top of `docs/`" like this: each page is in
 | `links` | error | Each relative link goes to a file that exists. Each link to a heading goes to a heading that exists. The rule does not check `http:`, `https:` or `mailto:` links. |
 | `code-paths` | error | Each inline code span that looks like a repo path exists. |
 | `diagrams` | error | Each diagram block parses, has a known type, passes the schema of its type and passes the check of its type. |
+| `figures` | error | Each figure module exists and runs. Each figure shows each node label of its source flow. A file source exists. See [the figure](../diagrams/figure.md#the-source). |
 | `generated` | error | Each generated page has a correct mark and a hash that matches. |
 | `glossary` | warning | A capitalized term that shows in two or more places is in `GLOSSARY.md`. |
 
@@ -37,10 +38,12 @@ An inline code span looks like a path when all of these are true:
 - It has a slash, or it ends in a known file extension such as `.md` or `.json`.
 - It has no spaces.
 - It is not a URL.
-- It does not start with `@` or `-`.
+- It does not start with `@`, `-` or `~`.
 - It does not have `<`, `*`, `{` or `(`.
 
-The path can be relative to the repo root or to the page. It must stay inside the repo. To skip some paths, add globs to `lint.ignorePaths` in `docs.config.json`. A glob matches the path without a `:line` suffix.
+The path can be relative to the repo root or to the page. It must stay inside the repo. A bare file name with no slash, such as `layout.ts`, can also name a file in any folder of the repo.
+
+To skip some paths, add globs to `lint.ignorePaths` in `docs.config.json`. A glob matches the path without a `:line` suffix. To skip all the code spans of some pages, add globs of the page paths to `lint.ignorePages`. Use it for pages that record the past, such as research notes, where old paths are correct for their date.
 
 ### generated
 

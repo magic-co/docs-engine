@@ -9,6 +9,8 @@ import type { Route, Site } from "../site/types.ts";
 import { urlPathname } from "../site/url.ts";
 
 export const DEFAULT_PORT = 4173;
+// Pages, schemas, and the modules and data files that figures read.
+const WATCHED = [".md", ".json", ".mjs", ".js", ".yaml", ".yml", ".svg"];
 const HOST = "127.0.0.1";
 const HEAD = `<script type="module" src="${fsUrl(CLIENT_ENTRY)}"></script>`;
 
@@ -40,7 +42,7 @@ export async function startDev(options: { root: string; port: number; log?: (lin
 
 function docsPlugin(root: string, log: (line: string) => void): Plugin {
   let site: Site = loadSite(root);
-  const watched = (file: string) => file.endsWith(".md") || file.endsWith(`/${CONFIG_FILE}`) || file.endsWith(".schema.json");
+  const watched = (file: string) => WATCHED.some((end) => file.endsWith(end)) || file.endsWith(`/${CONFIG_FILE}`);
   return {
     name: "docs-engine",
     configureServer(server: ViteDevServer) {
