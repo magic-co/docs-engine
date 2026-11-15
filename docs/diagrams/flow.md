@@ -109,6 +109,7 @@ The `diagrams` rule checks each flow block. The block must match the schema in `
 
 - Each edge starts at a node.
 - Each edge goes to a node or a group.
+- No edge goes from a node to itself.
 - Each `group` of a node names a group.
 - No node and group have the same id.
 - Each group has one or more nodes.

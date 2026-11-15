@@ -145,6 +145,12 @@ describe("lint", () => {
     expect(messages(`${NODES}\nedges: [ { from: a, to: constructor } ]`)).toEqual([expect.stringContaining("`constructor`")]);
   });
 
+  it("diagrams: rejects an edge from a node to itself", () => {
+    expect(lint(loadSite(repo({ "docs/orders/a.md": flow(`${NODES}\nedges: [ { from: a, to: a } ]`) }))).map((finding) => finding.message)).toEqual([
+      expect.stringContaining("edge 1 goes from `a` to itself"),
+    ]);
+  });
+
   it("diagrams: finds two nodes in one cell when a node id is empty", () => {
     const body = "title: T\nnodes:\n  '': { label: A, kind: start, at: [0, 0] }\n  b: { label: B, kind: end, at: [0, 0] }\nedges: []";
     expect(lint(loadSite(repo({ "docs/orders/a.md": flow(body) }))).map((finding) => finding.message)).toEqual([

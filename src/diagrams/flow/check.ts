@@ -17,6 +17,7 @@ export function checkFlow(flow: Flow): string[] {
   flow.edges.forEach((edge, index) => {
     if (!Object.hasOwn(flow.nodes, edge.from)) problems.push(`edge ${index + 1} starts at \`${edge.from}\`, which is not a node`);
     if (!Object.hasOwn(flow.nodes, edge.to) && !Object.hasOwn(groups, edge.to)) problems.push(`edge ${index + 1} goes to \`${edge.to}\`, which is not a node or a group`);
+    if (edge.from === edge.to) problems.push(`edge ${index + 1} goes from \`${edge.from}\` to itself`);
   });
   return problems;
 }
