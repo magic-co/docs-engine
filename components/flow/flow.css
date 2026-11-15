@@ -1,0 +1,63 @@
+/* Parts of this file derive from diagram-design, Copyright (c) 2025 Cathryn Lavery, MIT License. See THIRD_PARTY_NOTICES.md. */
+.docs-flow-figure { margin: 8px 0 20px; padding: 16px 16px 12px; border: 1px solid var(--rule); border-radius: 8px; background: var(--card); }
+.docs-flow-figure figcaption { margin-bottom: 8px; color: var(--soft); font: 500 11px var(--mono); letter-spacing: 0.14em; text-transform: uppercase; }
+.docs-flow-scroll { overflow-x: auto; }
+docs-flow { position: relative; display: block; width: 100%; min-width: calc(var(--w) * 0.6px); max-width: calc(var(--w) * 1px); container-type: inline-size; }
+docs-flow > svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+docs-flow marker polygon { fill: var(--muted); }
+.docs-flow-group { fill: rgba(45, 49, 66, 0.03); stroke: var(--rule-solid); stroke-dasharray: 4, 3; rx: 8; }
+.docs-flow-group-label, .docs-flow-edge-labels text { font-family: var(--mono); font-size: 9px; letter-spacing: 0.06em; fill: var(--muted); }
+.docs-flow-group-label { letter-spacing: 0.14em; fill: var(--soft); }
+.docs-flow-edge-labels { text-anchor: middle; }
+.docs-flow-edge-labels rect { fill: var(--card); }
+.docs-flow-edges { fill: none; stroke: var(--muted); stroke-width: 1; }
+
+docs-flow-node { position: absolute; display: block; }
+docs-flow-node ui-hover-card, docs-flow-node ui-hover-card-trigger { display: contents; }
+docs-flow-node a {
+  position: relative; isolation: isolate; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;
+  padding: 0 6px; border: 1px solid var(--ink); border-radius: 6px; background: var(--card); color: var(--ink);
+  font: 600 calc(100cqw * 12 / var(--w)) / 1.2 var(--sans); text-align: center; text-decoration: none;
+  transition: background 0.12s, border-color 0.12s, box-shadow 0.12s;
+}
+docs-flow-node:is([data-kind="start"], [data-kind="end"]) a { border-color: var(--soft); border-width: 0.8px; border-radius: 999px; background: #edeef1; }
+docs-flow-node[data-kind="goal"] a { border-color: var(--accent); background: #fdf1eb; }
+docs-flow-node[data-kind="decision"] a { border: 0; background: none; }
+docs-flow-node[data-kind="decision"] a::before, docs-flow-node[data-kind="decision"] a::after {
+  content: ""; position: absolute; z-index: -1; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+}
+docs-flow-node[data-kind="decision"] a::before { inset: 0; background: var(--ink); }
+docs-flow-node[data-kind="decision"] a::after { inset: 1.5px 3px; background: var(--card); }
+docs-flow-node a[href]:hover, docs-flow-node a[data-open] { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-tint); }
+docs-flow-node[data-kind="decision"] a[href]:hover::before, docs-flow-node[data-kind="decision"] a[data-open]::before { background: var(--accent); }
+docs-flow-node[data-kind="decision"] a:is([href]:hover, [data-open]) { box-shadow: none; }
+docs-flow-node a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+ui-hover-card-content {
+  z-index: 10; width: 300px; padding: 14px 16px 12px; border: 1px solid var(--ink); border-radius: 6px; background: var(--card);
+  color: var(--ink); font: 14px/1.5 var(--sans); box-shadow: 0 8px 24px rgba(45, 49, 66, 0.12);
+}
+ui-hover-card-content[hidden] { display: none; }
+ui-hover-card-arrow { width: 10px; height: 10px; border: 1px solid var(--ink); background: var(--card); transform: rotate(45deg); }
+ui-hover-card-arrow[data-side="bottom"] { top: -6px; border-right: 0; border-bottom: 0; }
+ui-hover-card-arrow[data-side="top"] { bottom: -6px; border-top: 0; border-left: 0; }
+ui-hover-card-content p { margin: 0 0 4px; }
+ui-hover-card-content .docs-card-kind { margin: 0; color: var(--soft); font: 500 10px var(--mono); letter-spacing: 0.14em; text-transform: uppercase; }
+ui-hover-card-content .docs-card-title { margin: 0 0 8px; font-size: 17px; font-weight: 600; }
+ui-hover-card-content dl, .docs-flow-details dl { margin: 0; }
+ui-hover-card-content dt, .docs-flow-details dt { margin-top: 6px; color: var(--accent); font: 500 10px var(--mono); letter-spacing: 0.1em; text-transform: uppercase; }
+ui-hover-card-content dd, .docs-flow-details dd { margin: 0 0 4px; }
+ui-hover-card-content .docs-card-hint { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--rule); color: var(--soft); font: 10px var(--mono); }
+
+.docs-flow-legend { display: flex; flex-wrap: wrap; gap: 6px 20px; align-items: center; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--rule); color: var(--muted); font: 10px var(--mono); }
+.docs-flow-legend > span:first-child { letter-spacing: 0.14em; text-transform: uppercase; }
+.docs-flow-legend i { display: inline-block; width: 16px; height: 12px; margin-right: 8px; vertical-align: -2px; border: 1px solid var(--ink); border-radius: 3px; background: var(--card); }
+.docs-flow-legend i:is([data-kind="start"], [data-kind="end"]) { border-color: var(--soft); border-radius: 999px; background: #edeef1; }
+.docs-flow-legend i[data-kind="goal"] { border-color: var(--accent); background: #fdf1eb; }
+.docs-flow-legend i[data-kind="decision"] { width: 12px; transform: rotate(45deg) scale(0.8); border-radius: 0; }
+.docs-flow-legend i[data-kind="group"] { border: 1px dashed var(--rule-solid); background: rgba(45, 49, 66, 0.03); }
+.docs-flow-legend i.docs-legend-dash { width: 32px; height: 0; border: 0; border-top: 1px dashed var(--muted); border-radius: 0; vertical-align: middle; }
+.docs-flow-keys { margin-left: auto; color: var(--soft); }
+
+.docs-flow-details td:first-child { font-weight: 600; white-space: nowrap; }
+.docs-flow-details tr:target td { background: var(--accent-tint); transition: background 0.3s; }

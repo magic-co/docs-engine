@@ -1,4 +1,5 @@
 // Parts of this file derive from diagram-design, Copyright (c) 2025 Cathryn Lavery, MIT License. See THIRD_PARTY_NOTICES.md.
+import { esc } from "../../render/html.ts";
 import type { RenderContext } from "../types.ts";
 import { type Flow, type FlowEdge, type FlowNode, type Kind, KINDS } from "./model.ts";
 
@@ -108,12 +109,12 @@ function labelAbove(text: string, x: number, y: number): string {
   const w = Math.max(...lines.map(monoWidth)) + 8;
   const top = y - 6 - lines.length * LINE;
   const spans = lines.map((line, i) => `<tspan x="${x}" dy="${i === 0 ? 0 : LINE}">${esc(line)}</tspan>`).join("");
-  return `<rect x="${x - w / 2}" y="${top}" width="${w}" height="${lines.length * LINE + 2}"/><text x="${x}" y="${top + 9}">${spans}</text>`;
+  return `<rect x="${round(x - w / 2)}" y="${top}" width="${round(w)}" height="${lines.length * LINE + 2}"/><text x="${x}" y="${top + 9}">${spans}</text>`;
 }
 
 function labelBeside(text: string, x: number, y: number): string {
   const w = monoWidth(text) + 8;
-  return `<rect x="${x + 6}" y="${y - 8}" width="${w}" height="12"/><text x="${x + 10}" y="${y + 1}" text-anchor="start">${esc(text)}</text>`;
+  return `<rect x="${x + 6}" y="${y - 8}" width="${round(w)}" height="12"/><text x="${x + 10}" y="${y + 1}" text-anchor="start">${esc(text)}</text>`;
 }
 
 function wrap(text: string, max = 16): string[] {
@@ -124,6 +125,10 @@ function wrap(text: string, max = 16): string[] {
     else lines.push(word);
   }
   return lines;
+}
+
+function round(value: number): number {
+  return Math.round(value * 10) / 10;
 }
 
 function monoWidth(text: string): number {
@@ -194,8 +199,4 @@ function legend(flow: Flow, hasGroups: boolean): string {
 
 function pct(value: number, total: number): string {
   return `${((value / total) * 100).toFixed(3)}%`;
-}
-
-function esc(text: string): string {
-  return text.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
 }
