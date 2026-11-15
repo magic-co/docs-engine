@@ -1,6 +1,6 @@
 # Live reload
 
-`docs dev` watches the Markdown files, `docs.config.json` and the schema files. After a change, each open page reloads by itself. When a diagram block has an error, the page shows the error in place of the diagram.
+`docs dev` watches the Markdown files, `docs.config.json`, and the `.json`, `.mjs`, `.js`, `.yaml`, `.yml` and `.svg` files that figures read. After a change, each open page reloads by itself. When a diagram block has an error, the page shows the error in place of the diagram.
 
 ## Sub-features
 
@@ -9,6 +9,7 @@
 - `reload-config` uses a new `title` from `docs.config.json`.
 - `reload-diagram-error` shows "This flow diagram has errors:" with a list of the errors and the source of the block.
 - `reload-recover` shows the diagram again after the error is fixed.
+- `reload-figure` reloads an open page after a change to a figure module, and shows the new drawing or the figure error.
 
 ## How to get to it (user POV)
 
@@ -30,6 +31,7 @@ Preconditions:
 - **Config title.** Change the site title in `docs.config.json`. Steps `{"goto": "/guides/"}`, `{"run": "python3 -c \"import json,os;p=os.environ['DOCS_VERIFY_SITE']+'/docs.config.json';d=json.load(open(p));d['title']='roastery docs';json.dump(d,open(p,'w'))\""}` and `{"expectEval": "document.title === 'Guides | roastery docs'", "timeout": 10000}`. The nav site title link reads `roastery docs`.
 - **Diagram error.** Open the flow page and break an edge. Steps `{"goto": "/diagrams/flow/"}`, `{"run": "sed -i.bak 's/from: pack, to: ship }/from: pack, to: nowhere }/' \"$DOCS_VERIFY_SITE/docs/diagrams/flow.md\" && rm \"$DOCS_VERIFY_SITE/docs/diagrams/flow.md.bak\""}` and `{"expectVisible": {"text": "line 9: edge 7 goes to `nowhere`, which is not a node or a group"}, "timeout": 10000}`. The page shows "This flow diagram has errors:".
 - **Recover.** Steps `{"run": "sed -i.bak 's/to: nowhere }/to: ship }/' \"$DOCS_VERIFY_SITE/docs/diagrams/flow.md\" && rm \"$DOCS_VERIFY_SITE/docs/diagrams/flow.md.bak\""}` and `{"expectVisible": {"role": "group", "name": "Order flow"}, "timeout": 10000}`.
+- **Figure module.** Open the figure page and change its module. Steps `{"goto": "/diagrams/figure/"}`, `{"eval": "window.__verifyMarker = 1"}`, `{"run": "sed -i.bak 's/\"Pack bags\"/\"Fill bags\"/' \"$DOCS_VERIFY_SITE/docs/diagrams/figures/roast-line.mjs\" && rm \"$DOCS_VERIFY_SITE/docs/diagrams/figures/roast-line.mjs.bak\""}`, `{"expectVisible": {"text": "Fill bags"}, "timeout": 10000}` and `{"expectEval": "window.__verifyMarker === undefined"}`. Then `{"run": "printf 'throw new Error(\"no beans\");\\n' > \"$DOCS_VERIFY_SITE/docs/diagrams/figures/roast-line.mjs\""}` and `{"expectVisible": {"text": "This figure has an error: the module failed: no beans"}, "timeout": 10000}`. Run `control-docs restore docs/diagrams/figures/roast-line.mjs` after the drive.
 - **Proof.** Add `{"aria": "reload-error"}` and `{"screenshot": "reload-error"}` after the error step. The artifacts show the error list in the page.
 
 ## Gotchas
