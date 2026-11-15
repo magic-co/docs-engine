@@ -73,6 +73,18 @@ describe("docs CLI", () => {
     expect(readFileSync(join(out, "keep.txt"), "utf8")).toBe("mine");
   });
 
+  it("build removes only manifest entries that name a page inside the output folder", () => {
+    const root = repo();
+    const out = join(root, "site-out");
+    expect(docs("build", "--root", root, "--out", out).status).toBe(0);
+    const listed = ["..\\outside.html", "a/../keep.html", "../outside.html"];
+    for (const name of ["..\\outside.html", "keep.html"]) writeFileSync(join(out, name), "mine");
+    writeFileSync(join(root, "outside.html"), "mine");
+    writeFileSync(join(out, ".docs-engine-manifest.json"), JSON.stringify(listed));
+    expect(docs("build", "--root", root, "--out", out).status).toBe(0);
+    for (const file of [join(out, "..\\outside.html"), join(out, "keep.html"), join(root, "outside.html")]) expect(readFileSync(file, "utf8")).toBe("mine");
+  });
+
   it("build leaves an earlier output as it is when lint has errors", () => {
     const root = repo();
     const out = join(root, "site-out");
