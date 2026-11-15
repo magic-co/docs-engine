@@ -60,6 +60,10 @@ describe("lint", () => {
     ]);
   });
 
+  it("links: decodes reserved characters in the path of a link", () => {
+    expect(findings({ "docs/guides/Q&A.md": "# Questions\n", "docs/guides/cupping.md": "# Taste\n\n[faq](Q%26A.md)\n" })).toEqual([]);
+  });
+
   it("routes: reports each source of a route that two sources share", () => {
     const messages = (changes: Files) => lint(loadSite(repo(changes))).map(({ rule, file, message }) => [rule, file, message]);
     expect(messages({ "docs/guides/index.md": "# Guides too\n", "docs/guides/setup.md": "# Set up\n", "docs/guides/01-setup.md": "# Set up first\n" })).toEqual([
@@ -78,6 +82,13 @@ describe("lint", () => {
       { rule: "routes", severity: "error", file: "docs/guides/..md", line: undefined },
     ]);
     expect([...loadSite(repo(changes)).routes.keys()].filter((route) => /\/\.{0,2}\//.test(route.slice(1)))).toEqual([]);
+  });
+
+  it("routes: reports a name that is also a file name in the build", () => {
+    expect(findings({ "docs/guides/index.html/README.md": "# Index\n", "docs/404.html/README.md": "# Missing\n" })).toEqual([
+      { rule: "routes", severity: "error", file: "docs/404.html/README.md", line: undefined },
+      { rule: "routes", severity: "error", file: "docs/guides/index.html/README.md", line: undefined },
+    ]);
   });
 
   it("routes: reserves /assets/ for the client files of the build", () => {

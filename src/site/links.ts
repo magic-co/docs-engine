@@ -16,7 +16,7 @@ export function resolveLink(site: Site, from: Page, url: string): Target {
   let file: string;
   let anchor: string | undefined;
   try {
-    file = decodeURI(pathname);
+    file = pathname.split("/").map(decodeURIComponent).join("/");
     anchor = hash === undefined ? undefined : decodeURIComponent(hash);
   } catch {
     return { kind: "malformed" };
