@@ -35,12 +35,13 @@ cmd_start() {
   git -C "$REPO" status --porcelain >"$run/instance/dirty"
   # The site copy holds every tracked and new file of the checkout, so the code-paths rule finds each path.
   (cd "$REPO" && git ls-files -z --cached --others --exclude-standard \
-    | xargs -0 -I{} sh -c 'test -e "$1" && printf "%s\0" "$1"' _ {} \
+    | xargs -0 -I{} sh -c 'if [ -e "$1" ]; then printf "%s\0" "$1"; fi' _ {} \
     | tar --null -T - -cf - | tar -xf - -C "$run/instance/site")
   port="${DOCS_VERIFY_PORT:-$(( 20000 + RANDOM % 20000 ))}"
   cd "$run/instance/site"
   nohup node "$REPO/dist/cli.js" dev --port "$port" >"$run/instance/dev.out" 2>"$run/instance/dev.err" </dev/null &
   echo $! >"$run/instance/dev.pid"
+  ps -o command= -p "$(cat "$run/instance/dev.pid")" >"$run/instance/dev.cmd"
   cd "$REPO"
   local url="" i
   for i in $(seq 1 60); do
@@ -49,12 +50,20 @@ cmd_start() {
     kill -0 "$(cat "$run/instance/dev.pid")" 2>/dev/null || die "the dev server exited. See $run/instance/dev.err."
     sleep 0.5
   done
-  [ -n "$url" ] || die "the dev server printed no URL in 30 s. See $run/instance/dev.out."
+  if [ -z "$url" ]; then
+    stop_pid "$run/instance/dev.pid" "$run/instance/dev.cmd"
+    die "the dev server printed no URL in 30 s. See $run/instance/dev.out."
+  fi
   echo "${url%/}" >"$run/instance/url"
+  local ready=0
   for i in $(seq 1 40); do
-    curl -fsS "${url%/}/" 2>/dev/null | grep -q '<title>' && break
+    if curl -fsS "${url%/}/" 2>/dev/null | grep -q '<title>'; then ready=1; break; fi
     sleep 0.25
   done
+  if [ "$ready" = 0 ]; then
+    stop_pid "$run/instance/dev.pid" "$run/instance/dev.cmd"
+    die "$url/ gave no page with a <title> in 10 s. See $run/instance/dev.err."
+  fi
   echo "$run" >"$run/instance/run"
   echo "export DOCS_VERIFY_RUN=$run"
   echo "url=${url%/}"
@@ -69,6 +78,8 @@ proc_cwd() {
 
 cmd_doctor() {
   need_run
+  # Each probe must reach check, so a failed probe does not stop the script.
+  set +e
   local ok=1 pid url cmd title head
   check() { if [ "$2" = 0 ]; then echo "ok    $1"; else echo "FAIL  $1"; ok=0; fi; }
   node_ok; check "node $(node --version) is 24 or later" $?
@@ -113,20 +124,41 @@ cmd_browse() {
 cmd_static() {
   need_run
   [ -f "$SITE/dist-site/index.html" ] || die "$SITE/dist-site/index.html does not exist. Run 'control-docs cli <label> build' first."
-  [ -f "$RUN/instance/static.pid" ] && kill -0 "$(cat "$RUN/instance/static.pid")" 2>/dev/null && { cat "$RUN/instance/static.url"; return; }
-  local port="$(( 20000 + RANDOM % 20000 ))" i
-  nohup python3 -m http.server "$port" --bind 127.0.0.1 --directory "$SITE/dist-site" >"$RUN/instance/static.out" 2>"$RUN/instance/static.err" </dev/null &
-  echo $! >"$RUN/instance/static.pid"
-  for i in $(seq 1 40); do curl -fsS "http://127.0.0.1:$port/" >/dev/null 2>&1 && break; sleep 0.25; done
-  curl -fsS "http://127.0.0.1:$port/" >/dev/null 2>&1 || die "the static server did not answer on port $port. See $RUN/instance/static.err."
-  echo "http://127.0.0.1:$port" | tee "$RUN/instance/static.url"
+  if owned "$RUN/instance/static.pid" "$RUN/instance/static.cmd"; then cat "$RUN/instance/static.url"; return; fi
+  local port try i pid
+  for try in 1 2 3; do
+    port="$(( 20000 + RANDOM % 20000 ))"; [ "$try" = 1 ] && port="${DOCS_VERIFY_STATIC_PORT:-$port}"
+    # http.server can share a port with another server (SO_REUSEPORT), so skip a port that already answers.
+    if curl -s -o /dev/null "http://127.0.0.1:$port/" 2>/dev/null; then continue; fi
+    nohup python3 -m http.server "$port" --bind 127.0.0.1 --directory "$SITE/dist-site" >"$RUN/instance/static.out" 2>"$RUN/instance/static.err" </dev/null &
+    pid=$!
+    echo "$pid" >"$RUN/instance/static.pid"
+    ps -o command= -p "$pid" >"$RUN/instance/static.cmd"
+    for i in $(seq 1 40); do
+      # A response only counts while our process lives. When the port is taken, python3 exits at once.
+      kill -0 "$pid" 2>/dev/null || break
+      if curl -fsS "http://127.0.0.1:$port/" >/dev/null 2>&1 && kill -0 "$pid" 2>/dev/null; then
+        echo "http://127.0.0.1:$port" | tee "$RUN/instance/static.url"
+        return
+      fi
+      sleep 0.25
+    done
+    stop_pid "$RUN/instance/static.pid" "$RUN/instance/static.cmd"
+  done
+  die "the static server did not start after 3 ports. See $RUN/instance/static.err."
+}
+
+# A saved pid is ours only while it runs the command that we saved at launch. This guards against pid reuse.
+owned() {
+  [ -f "$1" ] && [ -f "$2" ] || return 1
+  kill -0 "$(cat "$1")" 2>/dev/null || return 1
+  [ "$(ps -o command= -p "$(cat "$1")" 2>/dev/null)" = "$(cat "$2")" ]
 }
 
 stop_pid() {
   local pid child
-  [ -f "$1" ] || return 0
+  owned "$1" "$2" || return 0
   pid="$(cat "$1")"
-  kill -0 "$pid" 2>/dev/null || return 0
   for child in $(pgrep -P "$pid" 2>/dev/null || true); do kill "$child" 2>/dev/null || true; done
   kill "$pid" 2>/dev/null || true
   for _ in $(seq 1 20); do kill -0 "$pid" 2>/dev/null || break; sleep 0.25; done
@@ -135,8 +167,8 @@ stop_pid() {
 
 cmd_stop() {
   need_run
-  stop_pid "$RUN/instance/dev.pid"
-  stop_pid "$RUN/instance/static.pid"
+  stop_pid "$RUN/instance/dev.pid" "$RUN/instance/dev.cmd"
+  stop_pid "$RUN/instance/static.pid" "$RUN/instance/static.cmd"
   mkdir -p "$EVIDENCE/instance-logs"
   cp "$RUN/instance/"*.out "$RUN/instance/"*.err "$RUN/instance/"*.log "$RUN/instance/revision" "$RUN/instance/dirty" "$EVIDENCE/instance-logs/" 2>/dev/null || true
   rm -rf "$RUN/instance"

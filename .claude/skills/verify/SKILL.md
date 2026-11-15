@@ -108,11 +108,11 @@ $S cli build-clean build
 $S static                        # prints the URL of the static server
 ```
 
-`static` serves `dist-site/` of the copy with `python3 -m http.server` on 127.0.0.1 and prints its URL. Use that URL as an absolute `goto`. A second call prints the same URL.
+`static` serves `dist-site/` of the copy with `python3 -m http.server` on 127.0.0.1 and prints its URL. It accepts a port only while its own process answers, and tries up to 3 ports. Use that URL as an absolute `goto`. `browse` does not expand shell variables in the JSON, so put the URL into the steps with the shell. A second call prints the same URL.
 
 ## Evidence
 
-Each `cli` and `browse` call writes to `$DOCS_VERIFY_RUN/evidence/<label>/`. `browse` writes `steps.json`, `steps.log` (one `ok` or `FAIL` line for each step, then the browser errors and the result) and the files of its `aria`, `screenshot` and `text` steps. On a failure it also writes `failure.png` and `failure.aria.yaml`.
+Each `cli` and `browse` call writes to `$DOCS_VERIFY_RUN/evidence/<label>/`. `browse` writes `steps.json`, `steps.log` (one `ok` or `FAIL` line for each step, then the console errors and the result). An uncaught page exception fails the drive, also when each step passed. Console errors only print, because a 404 page logs one and the files of its `aria`, `screenshot` and `text` steps. On a failure it also writes `failure.png` and `failure.aria.yaml`.
 
 Proof standards:
 
@@ -129,7 +129,7 @@ Proof standards:
 $S stop
 ```
 
-`stop` stops only the processes that this run started: the dev server and the static server, from their pid files. It copies the logs of the instance to `evidence/instance-logs/` and then removes `$DOCS_VERIFY_RUN/instance/`. The evidence stays at `$DOCS_VERIFY_RUN/evidence/`. Run `ls "$DOCS_VERIFY_RUN/evidence"` after `stop` to confirm it. Never kill by process name. Run `stop` after each failed attempt too, then `start` again.
+`stop` stops only the processes that this run started: the dev server and the static server. It saves the pid and the command line of each at launch, and it signals a pid only while that pid still runs the saved command. It copies the logs of the instance to `evidence/instance-logs/` and then removes `$DOCS_VERIFY_RUN/instance/`. The evidence stays at `$DOCS_VERIFY_RUN/evidence/`. Run `ls "$DOCS_VERIFY_RUN/evidence"` after `stop` to confirm it. Never kill by process name. Run `stop` after each failed attempt too, then `start` again.
 
 ## Maintain
 

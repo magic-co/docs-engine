@@ -1,6 +1,6 @@
 # Build the static site
 
-`docs build` lints the repo, then writes one `index.html` for each page, a `404.html` and the client assets to `dist-site/`. It stops with exit code 1 and does not change the output folder when the lint finds an error. A good build removes the pages that it wrote before for docs that no longer exist.
+`docs build` lints the repo, then writes one `index.html` for each page, a `404.html` and the client assets to `dist-site/`. It bundles the client in a scratch folder first, then writes. It stops with exit code 1 and does not change the output folder when the lint or the bundle fails. A good build removes the pages that it wrote before for docs that no longer exist.
 
 ## Sub-features
 
@@ -8,6 +8,7 @@
 - `build-404` writes `dist-site/404.html`.
 - `build-assets` writes `dist-site/assets/client.js` and `dist-site/assets/client.css`.
 - `build-stop` exits 1, prints the findings and `docs: build stopped; <out> is not changed`, and does not touch the output folder when the lint has an error.
+- `build-assets-keep` keeps other files in `assets/`. The build replaces only `client.js` and `client.css`.
 - `build-prune` removes the pages of deleted docs on the next good build, and keeps files that it did not write.
 - `build-out` writes to the folder of `--out`.
 - `build-client` gives the static site the same interactive flow diagram as `docs dev`.
@@ -25,9 +26,10 @@ Preconditions:
 - The site copy is in the baseline state, with no `dist-site/`.
 
 - **Build.** Run `control-docs cli build-clean build`. The exit code is 0. stdout ends with `docs: wrote <n> pages to <copy>/dist-site`, where `<n>` is the number of routes. On the baseline it is 8.
-- **Files.** Run `find "$DOCS_VERIFY_RUN/instance/site/dist-site" -type f | sort`. The list has `index.html`, `404.html`, `assets/client.js`, `assets/client.css`, `glossary/index.html`, `diagrams/flow/index.html` and `research/index.html`. It also has `.docs-engine-manifest.json`, the list of pages that the build wrote. It has no `agents/` folder.
+- **Files.** Run `find "$DOCS_VERIFY_RUN/instance/site/dist-site" -type f | sort`. The list has `index.html`, `404.html`, `assets/client.js`, `assets/client.css`, `glossary/index.html`, `diagrams/flow/index.html` and `research/index.html`. It also has `.docs-engine-manifest.json`, the list of the files that the build wrote: the pages, `404.html`, `assets/client.js` and `assets/client.css`. It has no `agents/` folder.
 - **Other out folder.** Run `control-docs cli build-out build --out out-site`. The pages are in `$DOCS_VERIFY_RUN/instance/site/out-site/`.
-- **Client.** Run `control-docs static` and keep its URL as `$SU`. Run `browse` with `{"goto": "$SU/diagrams/flow/"}`, `{"hover": {"node": "Roast batch"}}` and `{"expectVisible": {"css": "ui-hover-card-content:not([hidden])", "hasText": "The beans are weighed."}}`. The card opens as in `docs dev`.
+- **Other assets stay.** Run `printf 'x\n' > "$DOCS_VERIFY_RUN/instance/site/out-site/assets/logo.txt"`, then `control-docs cli build-assets build --out out-site`. The exit code is 0, and `out-site/assets/logo.txt` is still there with `client.js` and `client.css`.
+- **Client.** Run `SU=$(control-docs static)`. `browse` reads the steps as literal JSON, so put the URL into the steps with the shell, for example `printf '[{"goto": "%s/diagrams/flow/"}, ...]' "$SU" | control-docs browse build-client -`. Use the steps `{"goto": "<SU>/diagrams/flow/"}`, `{"hover": {"node": "Roast batch"}}` and `{"expectVisible": {"css": "ui-hover-card-content:not([hidden])", "hasText": "The beans are weighed."}}`. The card opens as in `docs dev`.
 - **Stop on error.** Run `printf '# Loose\n' > "$DOCS_VERIFY_RUN/instance/site/docs/loose.md"`, `rm -rf "$DOCS_VERIFY_RUN/instance/site/dist-site"` and `control-docs cli build-error build`. The exit code is 1. stdout has the `layout` finding, `docs: 1 error, <n> warnings` and `docs: build stopped; <copy>/dist-site is not changed`. `dist-site/` does not exist. Remove `docs/loose.md`.
 - **Old output stays after a failed build.** Run `control-docs cli build-good build --out out-site`. Add the loose page again and run `control-docs cli build-stale build --out out-site`. The exit code is 1, stdout says `out-site is not changed`, and the pages of the good build are still in `out-site/`. Remove `docs/loose.md`.
 - **Prune deleted pages.** Run `printf 'keep\n' > "$DOCS_VERIFY_RUN/instance/site/out-site/notes.txt"` and `rm "$DOCS_VERIFY_RUN/instance/site/docs/adr/0001-custom-engine.md"`. Then run `control-docs cli build-prune build --out out-site`. The exit code is 0 and stdout says `wrote 7 pages`. `out-site/adr/custom-engine/index.html` is gone. `out-site/notes.txt` is still there.
@@ -38,6 +40,6 @@ Preconditions:
 - `python3 -m http.server` does not serve `404.html` for a missing route. A 404 status with a plain error page is the server, not the engine. Check `404.html` as a file.
 - The page links and the assets use absolute paths such as `/assets/client.js`. Serve `dist-site/` at the root of a server. A `file://` URL does not work.
 - `--out` is relative to the working directory. The helper runs in the site copy, so the output stays in the copy.
-- A failed build leaves the output folder as it is, by design. Remove the folder before a "no pages" check, or you see the pages of an earlier build.
-- The build removes only the pages in its manifest. Other files in the output folder stay. Do not delete `.docs-engine-manifest.json` before a prune check.
+- A lint or client-bundle failure leaves the output folder unchanged, by design. An I/O error during output writes can leave partial output. Remove the folder before a "no pages" check, or you see the pages of an earlier build.
+- The build removes only the files in its manifest. Other files in the output folder stay, also in `assets/`. Do not delete `.docs-engine-manifest.json` before a prune check.
 - `rm` in the site copy is safe. It is a disposable copy, and `stop` removes it.

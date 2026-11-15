@@ -92,7 +92,8 @@ async function run(page, step) {
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1280, height: 900 }, deviceScaleFactor: 1 });
   const errors = [];
-  page.on("pageerror", (error) => errors.push(error.message));
+  const exceptions = [];
+  page.on("pageerror", (error) => exceptions.push(error.message));
   page.on("console", (message) => message.type() === "error" && errors.push(message.text()));
   let failed = false;
   for (const [index, step] of steps.entries()) {
@@ -107,7 +108,11 @@ async function run(page, step) {
       break;
     }
   }
-  if (errors.length > 0) note(`browser errors: ${errors.join(" | ")}`);
+  if (errors.length > 0) note(`console errors: ${errors.join(" | ")}`);
+  if (exceptions.length > 0) {
+    failed = true;
+    note(`FAIL  uncaught page exceptions: ${exceptions.join(" | ")}`);
+  }
   await browser.close();
   note(failed ? `result: FAIL, evidence in ${outDir}` : `result: ok, evidence in ${outDir}`);
   process.exit(failed ? 1 : 0);

@@ -5,6 +5,7 @@
 ## Sub-features
 
 - `lint-clean` exits 0 on a repo with no errors and prints the warnings.
+- `lint-routes` finds two pages with the same route, a name that gives an empty, `.` or `..` route segment, and a route under `/assets/`.
 - `lint-layout` finds a page directly in `docs/`, and a missing `README.md`, `GLOSSARY.md`, `AGENTS.md`, `docs/adr/`, `docs/research/` or `docs/agents/`.
 - `lint-links` finds a link to a missing file and a link to a missing heading.
 - `lint-code-paths` finds an inline code span that looks like a path and does not exist.
@@ -34,10 +35,12 @@ Preconditions:
   - `docs/guides/README.md:<line> code-paths `src/missing.ts` does not exist in the repo`
   - `docs/guides/log.md:1 generated the page was edited by hand: its sha256 does not match. Run `roast-log` again`
   - The last line is `docs: 5 errors, <n> warnings`.
+- **Restore.** Run `rm "$DOCS_VERIFY_RUN/instance/site/docs/loose.md" "$DOCS_VERIFY_RUN/instance/site/docs/guides/log.md"` and `git show HEAD:docs/guides/README.md > "$DOCS_VERIFY_RUN/instance/site/docs/guides/README.md"`. Run `control-docs cli lint-restored lint`. The exit code is 0. The later steps each start from this baseline.
+- **Routes.** Run `mkdir -p "$DOCS_VERIFY_RUN/instance/site/docs/assets"`, `printf '# Logo\n' > "$DOCS_VERIFY_RUN/instance/site/docs/assets/logo.md"` and `printf '# Guides again\n' > "$DOCS_VERIFY_RUN/instance/site/docs/guides/index.md"`. Then run `control-docs cli lint-routes lint`. The exit code is 1. stdout has a `routes` line for `docs/assets/logo.md` and a `routes` line that says that `/guides/` is also the route of another page. Remove the two files and the `docs/assets/` folder.
 - **Missing top-level file.** Run `mv "$DOCS_VERIFY_RUN/instance/site/GLOSSARY.md" "$DOCS_VERIFY_RUN/instance/site/GLOSSARY.md.off"`, then `control-docs cli lint-layout-missing lint`. The exit code is 1. stdout has `GLOSSARY.md layout the file `GLOSSARY.md` must exist`. Move the file back.
 - **New glossary warning.** Run `printf '\nEach batch goes to the Kiln room.\n\nThe beans rest in the Kiln room.\n' >> "$DOCS_VERIFY_RUN/instance/site/docs/guides/writing-pages.md"`, then `control-docs cli lint-glossary lint`. The exit code is 0. stdout has a new line `docs/guides/writing-pages.md:<line> glossary "Kiln" looks like a term (2 places), but GLOSSARY.md does not define it`, and the warning count is one more than the baseline.
-- **Diagram error.** Run `sed -i.bak 's/from: pack, to: ship }/from: pack, to: nowhere }/' "$DOCS_VERIFY_RUN/instance/site/docs/diagrams/flow.md"`, then `control-docs cli lint-diagram lint`. stdout has `docs/diagrams/flow.md:9 diagrams edge 7 goes to `nowhere`, which is not a node or a group`.
-- **Warnings only.** Restore the copy. Run `stop` and `start`, or copy the changed files back from a copy that you made before the break. Run `control-docs cli lint-warnings lint`. The exit code is 0 although stdout has `glossary` warnings.
+- **Diagram error.** Run `sed -i.bak 's/from: pack, to: ship }/from: pack, to: nowhere }/' "$DOCS_VERIFY_RUN/instance/site/docs/diagrams/flow.md"`, then `control-docs cli lint-diagram lint`. stdout has `docs/diagrams/flow.md:9 diagrams edge 7 goes to `nowhere`, which is not a node or a group`. Run `git show HEAD:docs/diagrams/flow.md > "$DOCS_VERIFY_RUN/instance/site/docs/diagrams/flow.md"` and `rm "$DOCS_VERIFY_RUN/instance/site/docs/diagrams/flow.md.bak"` to restore it.
+- **Warnings only.** Run `git show HEAD:docs/guides/writing-pages.md > "$DOCS_VERIFY_RUN/instance/site/docs/guides/writing-pages.md"` to remove the glossary fixture. Run `control-docs cli lint-warnings lint`. The exit code is 0 although stdout has `glossary` warnings.
 - **Proof.** The `command.txt`, `stdout.txt`, `stderr.txt` and `exit-code.txt` of each label.
 
 ## Gotchas
