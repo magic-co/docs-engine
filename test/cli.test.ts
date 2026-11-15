@@ -1,0 +1,175 @@
+import { type ChildProcess, spawn, spawnSync } from "node:child_process";
+import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { createServer, type Server } from "node:net";
+import { join } from "node:path";
+import { afterEach, describe, expect, it } from "vitest";
+import { fsUrl } from "../src/server/dev.ts";
+import { repo } from "./fixture.ts";
+
+const CLI = join(import.meta.dirname, "../src/cli.ts");
+
+function docs(...args: string[]) {
+  return spawnSync(process.execPath, [CLI, ...args], { encoding: "utf8", env: { ...process.env, PORT: "" } });
+}
+
+const running: ChildProcess[] = [];
+const blockers: Server[] = [];
+
+afterEach(async () => {
+  for (const child of running.splice(0)) child.kill();
+  await Promise.all(blockers.splice(0).map((server) => new Promise((done) => server.close(done))));
+});
+
+function dev(root: string, port: number): Promise<string> {
+  const child = spawn(process.execPath, [CLI, "dev", "--root", root, "--port", String(port)], { stdio: ["ignore", "pipe", "pipe"] });
+  running.push(child);
+  return new Promise((resolve, reject) => {
+    let output = "";
+    child.stdout.on("data", (chunk: Buffer) => {
+      output += chunk.toString();
+      const url = /at (http:\/\/\S+)/.exec(output)?.[1];
+      if (url) resolve(url);
+    });
+    child.stderr.on("data", (chunk: Buffer) => (output += chunk.toString()));
+    child.on("exit", (code) => reject(new Error(`docs dev exited with ${code}: ${output}`)));
+  });
+}
+
+function block(port: number): Promise<void> {
+  const server = createServer();
+  blockers.push(server);
+  return new Promise((resolve) => server.listen(port, "127.0.0.1", resolve));
+}
+
+describe("docs CLI", () => {
+  it("lint exits 0 on a clean repo and 1 with the findings on a broken repo", () => {
+    expect(docs("lint", "--root", repo()).status).toBe(0);
+    const broken = docs("lint", "--root", repo({ "docs/guides/cupping.md": "# Taste\n\n[gone](gone.md)\n" }));
+    expect(broken.status).toBe(1);
+    expect(broken.stdout).toContain("docs/guides/cupping.md:3 links ");
+    expect(broken.stdout).toContain("docs: 1 error, 0 warnings");
+  });
+
+  it("build writes the HTML pages and the client assets", () => {
+    const root = repo();
+    const out = join(root, "site-out");
+    const result = docs("build", "--root", root, "--out", out);
+    expect(result.status, result.stderr).toBe(0);
+    expect(readFileSync(join(out, "guides/roasting/index.html"), "utf8")).toContain("<h1 id=\"roast-a-batch\">Roast a batch</h1>");
+    expect(existsSync(join(out, "research/index.html"))).toBe(true);
+    expect(existsSync(join(out, "agents"))).toBe(false);
+    expect(existsSync(join(out, "assets/client.js")) && existsSync(join(out, "assets/client.css"))).toBe(true);
+  });
+
+  it("build removes the pages of deleted sources and keeps other files", () => {
+    const root = repo();
+    const out = join(root, "site-out");
+    expect(docs("build", "--root", root, "--out", out).status).toBe(0);
+    writeFileSync(join(out, "keep.txt"), "mine");
+    rmSync(join(root, "docs/guides/cupping.md"));
+    expect(docs("build", "--root", root, "--out", out).status).toBe(0);
+    expect(existsSync(join(out, "guides/cupping"))).toBe(false);
+    expect(existsSync(join(out, "guides/brewing/index.html"))).toBe(true);
+    expect(readFileSync(join(out, "keep.txt"), "utf8")).toBe("mine");
+  });
+
+  it("build removes only manifest entries that name a page inside the output folder", () => {
+    const root = repo();
+    const out = join(root, "site-out");
+    expect(docs("build", "--root", root, "--out", out).status).toBe(0);
+    const listed = ["..\\outside.html", "a/../keep.html", "../outside.html"];
+    for (const name of ["..\\outside.html", "keep.html"]) writeFileSync(join(out, name), "mine");
+    writeFileSync(join(root, "outside.html"), "mine");
+    writeFileSync(join(out, ".docs-engine-manifest.json"), JSON.stringify(listed));
+    expect(docs("build", "--root", root, "--out", out).status).toBe(0);
+    for (const file of [join(out, "..\\outside.html"), join(out, "keep.html"), join(root, "outside.html")]) expect(readFileSync(file, "utf8")).toBe("mine");
+  });
+
+  it("build keeps files in the assets folder that it did not write", () => {
+    const root = repo();
+    const out = join(root, "site-out");
+    expect(docs("build", "--root", root, "--out", out).status).toBe(0);
+    writeFileSync(join(out, "assets/notes.txt"), "mine");
+    expect(docs("build", "--root", root, "--out", out).status).toBe(0);
+    expect(readFileSync(join(out, "assets/notes.txt"), "utf8")).toBe("mine");
+    expect(existsSync(join(out, "assets/client.js"))).toBe(true);
+  });
+
+  it("build leaves an earlier output as it is when lint has errors", () => {
+    const root = repo();
+    const out = join(root, "site-out");
+    expect(docs("build", "--root", root, "--out", out).status).toBe(0);
+    rmSync(join(root, "docs/guides/cupping.md"));
+    writeFileSync(join(root, "docs/guides/brewing.md"), "# Brew\n\n[gone](gone.md)\n");
+    const failed = docs("build", "--root", root, "--out", out);
+    expect(failed.status).toBe(1);
+    expect(failed.stdout).toContain(`docs: build stopped; ${out} is not changed`);
+    expect(existsSync(join(out, "guides/cupping/index.html"))).toBe(true);
+  });
+
+  it("build exits 1 and writes nothing when lint has errors", () => {
+    const root = repo({ "GLOSSARY.md": null });
+    expect(docs("build", "--root", root, "--out", join(root, "site-out")).status).toBe(1);
+    expect(existsSync(join(root, "site-out"))).toBe(false);
+  });
+
+  it("dev serves the site on 127.0.0.1", async () => {
+    const url = await dev(repo(), 47311);
+    expect(url).toBe("http://127.0.0.1:47311/");
+    const response = await fetch(url);
+    expect(response.status).toBe(200);
+    const html = await response.text();
+    expect(html).toContain("Roastery docs");
+    expect(html).toContain("/@vite/client");
+  });
+
+  it("dev picks the next free port when the first one is taken", async () => {
+    await block(47321);
+    const url = await dev(repo(), 47321);
+    expect(url).not.toBe("http://127.0.0.1:47321/");
+    expect(url).toMatch(/^http:\/\/127\.0\.0\.1:\d+\/$/);
+    expect((await fetch(url)).status).toBe(200);
+  });
+});
+
+describe("docs dev requests", () => {
+  it("serves a page whose route looks like a file extension", async () => {
+    const url = await dev(repo({ "docs/guides/api.v2.md": "# Order API v2\n" }), 47341);
+    const response = await fetch(new URL("/guides/api.v2/", url));
+    expect(response.status).toBe(200);
+    expect(await response.text()).toContain("Order API v2");
+  });
+
+  it("serves and redirects pages whose names need percent-encoding", async () => {
+    const url = await dev(repo({ "docs/guides/rate%41.md": "# Rate\n", "docs/guides/why?.md": "# Why\n", "docs/guides/焙煎.md": "# Roast\n" }), 47361);
+    for (const path of ["/guides/rate%2541/", "/guides/why%3F/", "/guides/%E7%84%99%E7%85%8E/"]) expect((await fetch(new URL(path, url))).status, path).toBe(200);
+    const moved = await fetch(new URL("/guides/焙煎", url), { redirect: "manual" });
+    expect([moved.status, moved.headers.get("location")]).toEqual([301, "/guides/%E7%84%99%E7%85%8E/"]);
+  });
+
+  it("answers 400 for a malformed URL and keeps serving", async () => {
+    const url = await dev(repo(), 47351);
+    expect((await fetch(new URL("/%", url))).status).toBe(400);
+    expect((await fetch(url)).status).toBe(200);
+  });
+});
+
+describe("fsUrl", () => {
+  it("builds the Vite /@fs URL of a POSIX path and of a Windows path", () => {
+    expect(fsUrl("/home/roaster/docs engine/client.ts", false)).toBe("/@fs/home/roaster/docs%20engine/client.ts");
+    expect(fsUrl("C:\\Users\\roaster\\engine\\client.ts", true)).toBe("/@fs/C:/Users/roaster/engine/client.ts");
+  });
+});
+
+describe("docs dev on the engine repo", () => {
+  it("serves the client modules that the pages import", async () => {
+    const url = await dev(join(import.meta.dirname, ".."), 47331);
+    const html = await (await fetch(url)).text();
+    const entry = /<script type="module" src="(\/@fs[^"]+)"/.exec(html)?.[1];
+    expect(entry).toBeDefined();
+    const client = await (await fetch(new URL(entry!, url))).text();
+    const imports = [...client.matchAll(/import\s+"([^"]+)"/g)].map((match) => match[1]!);
+    expect(imports.length).toBeGreaterThan(0);
+    for (const path of imports) expect((await fetch(new URL(path, new URL(entry!, url)))).status, path).toBe(200);
+  });
+});

@@ -1,0 +1,4 @@
+{
+  "title": "docs-engine",
+  "lint": { "ignorePaths": ["dist/**", "dist-site/**"] }
+}
