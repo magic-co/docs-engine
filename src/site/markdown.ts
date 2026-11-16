@@ -5,7 +5,7 @@ import remarkGfm from "remark-gfm";
 import remarkParse from "remark-parse";
 import { unified } from "unified";
 import { visit } from "unist-util-visit";
-import { type BlockPlace, checkDiagram } from "../diagrams/index.ts";
+import { type BlockPlace, type Checked, checkDiagram } from "../diagrams/index.ts";
 import type { DiagramBlock } from "./types.ts";
 
 const parser = unified().use(remarkParse).use(remarkGfm);
@@ -27,18 +27,25 @@ export function headingSlugs(tree: Root, slugger = new GithubSlugger()): Map<Hea
   return slugs;
 }
 
-// The id of each valid diagram, slugged after the headings in page order. The renderer and the lint share this order.
-export function diagramIds(tree: Root, slugger: GithubSlugger, place: BlockPlace): Map<Code, string> {
-  const ids = new Map<Code, string>();
+/** A diagram block, checked once. Only a valid diagram has an id. */
+export interface PageDiagram {
+  type: string;
+  checked: Checked;
+  id?: string;
+}
+
+// Each diagram block of the page. The id of a valid diagram is slugged after the headings, in page order. The renderer and the lint share this order.
+export function pageDiagrams(tree: Root, slugger: GithubSlugger, place: BlockPlace): Map<Code, PageDiagram> {
+  const diagrams = new Map<Code, PageDiagram>();
   visit(tree, "code", (node) => {
     const type = diagramType(node);
     if (!type) return;
     const checked = checkDiagram({ type, source: node.value, line: node.position?.start.line ?? 1 }, place);
-    if (!checked.ok) return;
+    if (!checked.ok) return void diagrams.set(node, { type, checked });
     const title = (checked.data as { title?: unknown }).title;
-    ids.set(node, slugger.slug(typeof title === "string" ? title : `${type}-diagram`));
+    diagrams.set(node, { type, checked, id: slugger.slug(typeof title === "string" ? title : `${type}-diagram`) });
   });
-  return ids;
+  return diagrams;
 }
 
 export function diagramType(node: Code): string | undefined {

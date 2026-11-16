@@ -7,7 +7,7 @@ import { figureText, normalize } from "../../diagrams/figure/text.ts";
 import type { Flow } from "../../diagrams/flow/model.ts";
 import { repoFile } from "../../site/files.ts";
 import { resolveLink } from "../../site/links.ts";
-import { diagramIds, diagramType, headingSlugs } from "../../site/markdown.ts";
+import { headingSlugs, pageDiagrams } from "../../site/markdown.ts";
 import type { Page, Site } from "../../site/types.ts";
 import type { Rule } from "../types.ts";
 
@@ -55,11 +55,8 @@ function sourceFlow(site: Site, page: Page, source: string): Flow | string {
   if (target.kind !== "local" || !target.page || !target.anchor) return `the source \`${source}\` is not a page in the site`;
   const slugger = new GithubSlugger();
   headingSlugs(target.page.tree, slugger);
-  const place = { root: site.root, page: target.page.path };
-  for (const [node, id] of diagramIds(target.page.tree, slugger, place)) {
-    if (id !== target.anchor || diagramType(node) !== "flow") continue;
-    const checked = checkDiagram({ type: "flow", source: node.value, line: node.position?.start.line ?? 1 }, place);
-    if (checked.ok) return checked.data as Flow;
+  for (const { type, checked, id } of pageDiagrams(target.page.tree, slugger, { root: site.root, page: target.page.path }).values()) {
+    if (id === target.anchor && type === "flow" && checked.ok) return checked.data as Flow;
   }
   return `the source \`${source}\` names no flow diagram. Use the id of the flow: the slug of its title`;
 }

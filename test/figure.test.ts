@@ -85,18 +85,23 @@ describe("figure", () => {
     ]);
   });
 
-  it("finds a missing module and a module that fails", () => {
+  it("finds a missing module and a module that fails, and keeps only the figure fields", () => {
     const found = figureFindings({
       "figures/bad.mjs": 'throw new Error("no beans");\n',
       "figures/empty.mjs": "export default { script: 'x' };\n",
+      "figures/fn.mjs": "export default { html: '<p>Roast</p>', script: () => 1 };\n",
+      "figures/big.mjs": "export default { html: '<p>Roast</p>', weight: 10n };\n",
       "docs/orders/a.md": page("module: figures/gone.mjs\nillustration: true"),
       "docs/orders/b.md": page("module: figures/bad.mjs\nillustration: true"),
       "docs/orders/c.md": page("module: figures/empty.mjs\nillustration: true"),
+      "docs/orders/d.md": page("module: figures/fn.mjs\nillustration: true"),
+      "docs/orders/e.md": page("module: figures/big.mjs\nillustration: true"),
     });
     expect(found.map((finding) => finding.message)).toEqual([
       "the module `figures/gone.mjs` does not exist in the repo",
       "the module failed: no beans",
       "the module failed: the default export has no html string",
+      "the module failed: the default export has a script that is not a string",
     ]);
   });
 
