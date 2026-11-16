@@ -13,10 +13,31 @@ export const DEFAULT_PORT = 4173;
 // Pages, schemas, and the modules and data files that figures read. Vite reloads the CSS of the theme itself.
 const WATCHED = [".md", ".json", ".mjs", ".js", ".yaml", ".yml", ".svg"];
 const HOST = "127.0.0.1";
-const HEAD = `<script type="module" src="${fsUrl(CLIENT_ENTRY)}"></script>`;
+const ENTRY = fsUrl(CLIENT_ENTRY);
 
 export function fsUrl(path: string, windows = process.platform === "win32"): string {
   return `/@fs${pathToFileURL(path, { windows }).pathname}`;
+}
+
+// The client imports the CSS, but Vite adds it only after the script runs. A <link> per stylesheet lets the browser
+// draw each page with its styles, as the build does. Vite still swaps the styles in place when a file changes.
+async function head(server: ViteDevServer): Promise<string> {
+  const links = (await stylesheets(server, ENTRY, new Set())).map((url) => `<link rel="stylesheet" href="${url}">`);
+  return [...links, `<script type="module" src="${ENTRY}"></script>`].join("\n");
+}
+
+// The CSS that a module imports, in import order, through the modules it imports.
+async function stylesheets(server: ViteDevServer, url: string, seen: Set<string>): Promise<string[]> {
+  await server.transformRequest(url);
+  const module = await server.moduleGraph.getModuleByUrl(url);
+  const found: string[] = [];
+  for (const imported of module?.importedModules ?? []) {
+    if (seen.has(imported.url)) continue;
+    seen.add(imported.url);
+    if (imported.file?.endsWith(".css")) found.push(imported.url);
+    else found.push(...(await stylesheets(server, imported.url, seen)));
+  }
+  return found;
 }
 
 export interface DevServer {
@@ -75,7 +96,7 @@ function docsPlugin(root: string, state: { site: Site }, log: (line: string) => 
         const known = site.routes.has(pathname as Route) || site.routes.has(`${pathname}/` as Route);
         if (pathname.startsWith("/@") || (extname(pathname) !== "" && !known)) return next();
         try {
-          const result = respond(site, pathname, HEAD);
+          const result = respond(site, pathname, await head(server));
           if (result.status === 301) {
             response.writeHead(301, { location: result.location }).end();
             return;
