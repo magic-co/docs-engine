@@ -49,6 +49,8 @@ Set new token values on `:root`. Change a token before you write a new rule, so 
 | `--sans` | The body font. |
 | `--mono` | Code, labels and table heads. |
 | `--display` | The page title and the site title. |
+| `--label-size` | The size of the small labels in diagrams, such as edge labels, legends, axis ticks and the kind line of a hover card. |
+| `--card-size` | The size of the body text of a diagram hover card. The card title is 3px larger. |
 | `--radius` | The corner radius of code blocks, controls and errors. |
 | `--nav-width` | The width of the nav column. |
 | `--page-width` | The width of the page column, figures and tables. |
