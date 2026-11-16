@@ -30,4 +30,6 @@ The nav comes from the folder tree:
 
 To set the order by hand, start the file or folder name with a number and a hyphen, such as `docs/<section>/01-install.md`. Pages with a number come first, in number order. The engine removes the number from the route, so that page has the route `/<section>/install/`.
 
-The `docs/adr/` section shows as "Decisions" in the nav. The research pages are in the site, but not in the nav. The agent files are not in the site.
+The `docs/adr/` section shows as "Decisions" in the nav. `GLOSSARY.md` shows as "Glossary", after all the sections. The research pages are in the site, but not in the nav. The agent files are not in the site.
+
+On a screen narrower than 800px, the nav is closed. The Menu button opens it.

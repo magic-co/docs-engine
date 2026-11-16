@@ -31,3 +31,10 @@ SOFTWARE.
 ## UI SDK
 
 The client parts use `@ui-sdk/core` and `@ui-sdk/web` as npm dependencies. UI SDK is under the Apache License 2.0. The license text is in the `LICENSE` file of each package.
+
+## Fonts
+
+The page shell uses three fonts from Fontsource npm packages. The build puts their Latin files into `client.css`. Each font is under the SIL Open Font License 1.1. The license text is in the `LICENSE` file of each package.
+
+- Geist and Geist Mono (`@fontsource-variable/geist`, `@fontsource-variable/geist-mono`): Copyright 2024 The Geist Project Authors (https://github.com/vercel/geist-font).
+- Instrument Serif (`@fontsource/instrument-serif`): Copyright 2022 The Instrument Serif Project Authors (https://github.com/Instrument/instrument-serif).

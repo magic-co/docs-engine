@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const read = (path: string) => readFileSync(join(import.meta.dirname, "../components", path), "utf8");
-const css = read("site/site.css") + read("flow/flow.css") + read("flow/gantt.css");
+const css = read("site/tokens.css") + read("site/site.css") + read("flow/flow.css") + read("flow/gantt.css");
 const NO_TEXT = new Set(["none", "transparent", "inherit", "currentcolor"]);
 const SHAPE = /(rect|polygon|\.docs-flow-group)$/;
 

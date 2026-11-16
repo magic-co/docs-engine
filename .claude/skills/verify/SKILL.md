@@ -80,6 +80,7 @@ $S browse <label> steps.json     # or: ... | $S browse <label> -
 | `{"expectEval": "window.__mark === undefined"}` | Waits until the expression is true. |
 | `{"run": "shell command"}` | Runs a shell command while the page stays open. `$DOCS_VERIFY_SITE` is the site copy. |
 | `{"wait": 1000}` | Waits. Use it only to prove that nothing happens. |
+| `{"viewport": [390, 844]}` | Sets the page size. The page starts at 1280 by 900. |
 | `{"aria": "name"}` | Saves the ARIA snapshot of the page as `name.aria.yaml`. |
 | `{"screenshot": "name"}` | Saves a full-page `name.png`. |
 | `{"text": {"target": T, "save": "name"}}` | Saves the visible text of `T` as `name.txt`. |
@@ -95,7 +96,7 @@ Add `"hasText": "..."` to filter a target by its text, and `"nth": 0` to pick on
 
 The stable handles of the site:
 
-- The nav is `navigation "Docs"`. The current page link has `aria-current="page"`.
+- The nav is `navigation "Docs"`. The current page link has `aria-current="page"`. Below 800px wide, the `button "Menu"` opens the nav tree `#docs-nav-tree`, and its `aria-expanded` tells the state.
 - The page body is `main` > `article`. The footer has the `Research` link when `docs/research/` exists.
 - A flow diagram is `figure` > `group "<title>"`. Each node is `docs-flow-node[value=<id>][data-kind=<kind>]` with one `link "<label>"` inside.
 - A figure is `div.docs-figure`. Its content comes from the module, so use the roles and the classes that the module writes, such as `img "The order flow as a line of machines"` and `.roast-line-step-name`.

@@ -97,6 +97,12 @@
       "skillPath": "plugins/pstack/skills/how/SKILL.md",
       "computedHash": "68ca421842ed5d94508604d5a0a694eff5fe5690cc8bdbec4003e358fc774f60"
     },
+    "impeccable": {
+      "source": "pbakaus/impeccable",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/impeccable/SKILL.md",
+      "computedHash": "077889e9782761360c17acbc2522af320d0dd0f928b09cd90884fa304f443a34"
+    },
     "in-your-own-words": {
       "source": "michael-denyer/pstack-claude",
       "sourceType": "github",
