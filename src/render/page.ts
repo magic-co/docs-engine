@@ -53,5 +53,5 @@ function linkHref(site: Site, page: Page, url: string): string {
   const target = resolveLink(site, page, url);
   if (target.kind !== "local" || !target.page?.route) return url;
   const anchor = target.anchor ? `#${target.anchor}` : "";
-  return target.page === page && anchor && !target.query ? anchor : `${routeUrl(target.page.route)}${target.query}${anchor}`;
+  return target.page === page && anchor && !target.query ? anchor : `${routeUrl(site, target.page.route)}${target.query}${anchor}`;
 }

@@ -30,6 +30,8 @@ export interface NavNode {
 
 export interface Site {
   root: string;
+  /** The URL path that the site is served under, such as `/` or `/repo/`. */
+  base: string;
   config: Config;
   title: string;
   pages: Map<RepoPath, Page>;

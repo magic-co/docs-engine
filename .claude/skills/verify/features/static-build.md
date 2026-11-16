@@ -12,6 +12,7 @@
 - `build-prune` removes the pages of deleted docs on the next good build, and keeps files that it did not write.
 - `build-out` writes to the folder of `--out`.
 - `build-client` gives the static site the same interactive flow diagram as `docs dev`.
+- `build-base` with `--base /<path>/` starts each site URL (nav, links, flow links, assets, 404 home link) with that path. A base that does not start and end with `/` stops the build with exit code 1.
 
 ## How to get to it (user POV)
 
@@ -33,6 +34,7 @@ Preconditions:
 - **Stop on error.** Run `printf '# Loose\n' > "$DOCS_VERIFY_RUN/instance/site/docs/loose.md"`, `rm -rf "$DOCS_VERIFY_RUN/instance/site/dist-site"` and `control-docs cli build-error build`. The exit code is 1. stdout has the `layout` finding, `docs: 1 error, <n> warnings` and `docs: build stopped; <copy>/dist-site is not changed`. `dist-site/` does not exist. Remove `docs/loose.md`.
 - **Old output stays after a failed build.** Run `control-docs cli build-good build --out out-site`. Add the loose page again and run `control-docs cli build-stale build --out out-site`. The exit code is 1, stdout says `out-site is not changed`, and the pages of the good build are still in `out-site/`. Remove `docs/loose.md`.
 - **Prune deleted pages.** Run `printf 'keep\n' > "$DOCS_VERIFY_RUN/instance/site/out-site/notes.txt"` and `rm "$DOCS_VERIFY_RUN/instance/site/docs/adr/0001-custom-engine.md"`. Then run `control-docs cli build-prune build --out out-site`. The exit code is 0 and stdout says `wrote 8 pages`. `out-site/adr/custom-engine/index.html` is gone. `out-site/notes.txt` is still there.
+- **Base path.** Run `control-docs cli build-base build --out serve/roastery --base /roastery/`. The exit code is 0. Serve `serve/` with a static server, so that `serve/roastery/index.html` is at `/roastery/`. Open `/roastery/`, follow each nav link, follow a page link, click a flow node that has a link, and open `/roastery/404.html` and follow its home link. Each page loads with its styles, each local `href` and `src` starts with `/roastery/`, and no request fails. Then run `control-docs cli build-base-bad build --out bad-site --base roastery`. The exit code is 1, stderr says `the base path must start and end with "/"`, and `bad-site/` does not exist.
 - **Proof.** The CLI evidence of each label, the `find` list, and `steps.log` with a screenshot of the static flow page.
 
 ## Gotchas
