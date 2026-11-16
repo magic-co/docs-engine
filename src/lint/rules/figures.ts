@@ -1,12 +1,13 @@
 import GithubSlugger from "github-slugger";
 import { checkDiagram } from "../../diagrams/index.ts";
 import type { Figure } from "../../diagrams/figure/model.ts";
-import { FigureError, runFigure } from "../../diagrams/figure/run.ts";
+import { runFigure } from "../../diagrams/figure/run.ts";
+import { ModuleError } from "../../diagrams/module.ts";
 import { figureText, normalize } from "../../diagrams/figure/text.ts";
 import type { Flow } from "../../diagrams/flow/model.ts";
 import { repoFile } from "../../site/files.ts";
 import { resolveLink } from "../../site/links.ts";
-import { diagramIds, diagramType, headingSlugs } from "../../site/markdown.ts";
+import { headingSlugs, pageDiagrams } from "../../site/markdown.ts";
 import type { Page, Site } from "../../site/types.ts";
 import type { Rule } from "../types.ts";
 
@@ -18,7 +19,7 @@ export const figures: Rule = {
       page.diagrams
         .filter((block) => block.type === "figure")
         .flatMap((block) => {
-          const checked = checkDiagram(block);
+          const checked = checkDiagram(block, { root: site.root, page: page.path });
           if (!checked.ok) return [];
           return checkFigure(site, page, checked.data as Figure).map((message) => ({ file: page.path, line: block.line, message }));
         }),
@@ -33,7 +34,7 @@ function checkFigure(site: Site, page: Page, figure: Figure): string[] {
   try {
     html = runFigure(file, site.root).html;
   } catch (error) {
-    if (error instanceof FigureError) return [error.message];
+    if (error instanceof ModuleError) return [error.message];
     throw error;
   }
   if (figure.source === undefined) return [];
@@ -54,10 +55,8 @@ function sourceFlow(site: Site, page: Page, source: string): Flow | string {
   if (target.kind !== "local" || !target.page || !target.anchor) return `the source \`${source}\` is not a page in the site`;
   const slugger = new GithubSlugger();
   headingSlugs(target.page.tree, slugger);
-  for (const [node, id] of diagramIds(target.page.tree, slugger)) {
-    if (id !== target.anchor || diagramType(node) !== "flow") continue;
-    const checked = checkDiagram({ type: "flow", source: node.value, line: node.position?.start.line ?? 1 });
-    if (checked.ok) return checked.data as Flow;
+  for (const diagram of pageDiagrams(target.page.tree, slugger, { root: site.root, page: target.page.path }).values()) {
+    if (diagram.kind === "valid" && diagram.id === target.anchor && diagram.type === "flow") return diagram.checked.data as Flow;
   }
   return `the source \`${source}\` names no flow diagram. Use the id of the flow: the slug of its title`;
 }

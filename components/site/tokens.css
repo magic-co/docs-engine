@@ -25,6 +25,8 @@
   --sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --display: "Instrument Serif", Georgia, "Times New Roman", serif;
+  --label-size: 10px;
+  --card-size: 14px;
   /* Shape and size */
   --radius: 6px;
   --nav-width: 272px;

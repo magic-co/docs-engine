@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "A tree diagram: each node names its parent, and the engine places the nodes",
+  "type": "object",
+  "required": ["title", "nodes"],
+  "additionalProperties": false,
+  "properties": {
+    "title": { "type": "string", "minLength": 1 },
+    "relation": {
+      "description": "The words that join a node to its parent in its card, such as Reports to. Default: Under.",
+      "type": "string",
+      "minLength": 1
+    },
+    "nodes": {
+      "description": "The nodes in order. Children show from left to right in this order.",
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "required": ["label"],
+        "additionalProperties": false,
+        "properties": {
+          "label": { "type": "string", "minLength": 1 },
+          "parent": { "type": "string", "description": "The id of the parent node. A node with no parent is a root." },
+          "note": { "type": "string", "minLength": 1, "description": "A short second line in the box, such as who fills it." },
+          "description": { "type": "string" },
+          "details": {
+            "description": "Labelled facts in order. A list prints as bullets.",
+            "type": "object",
+            "additionalProperties": { "anyOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }] }
+          },
+          "href": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

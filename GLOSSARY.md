@@ -20,6 +20,10 @@ A folder under `docs/`. A section shows in the nav with its pages. Its README.md
 
 A fenced code block whose info string is `yaml <type>`, such as `yaml flow`. The engine draws it as a diagram.
 
+## Data module
+
+A JavaScript module of the repo whose default export is the data of a diagram block. A block names it with `from`, so the diagram reads facts that live in another file.
+
 ## Diagram type
 
 One entry in the diagram registry. It has a JSON Schema, a check for references, and a render function.

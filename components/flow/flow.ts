@@ -2,6 +2,7 @@ import "@ui-sdk/web/hover-card";
 import { createRovingFocus, definePrimitive, spatialMove } from "@ui-sdk/core";
 import { createParts } from "@ui-sdk/web";
 import "./flow.css";
+import "./gantt.css";
 
 const flow = definePrimitive({
   name: "docs-flow",

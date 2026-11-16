@@ -1,3 +1,5 @@
+import type { Details } from "../board.ts";
+
 export const KINDS = {
   start: "Start",
   step: "Step",
@@ -14,7 +16,7 @@ export interface FlowNode {
   at: [number, number];
   group?: string;
   description?: string;
-  details?: Record<string, string>;
+  details?: Details;
   href?: string;
 }
 

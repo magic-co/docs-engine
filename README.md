@@ -43,7 +43,7 @@ docs/agents/       agent notes (not in the site)
 docs/<section>/    other sections
 ```
 
-Read [the layout and the lint rules](docs/guides/layout-and-lint.md) for the full rules. Read [write pages](docs/guides/writing-pages.md) for pages and navigation. Read [the flow diagram](docs/diagrams/flow.md) and [the figure](docs/diagrams/figure.md) for diagrams.
+Read [the layout and the lint rules](docs/guides/layout-and-lint.md) for the full rules. Read [write pages](docs/guides/writing-pages.md) for pages and navigation. Read [diagrams](docs/diagrams/README.md) for the diagram types: flow, tree, Gantt and figure.
 
 ## Configuration
 

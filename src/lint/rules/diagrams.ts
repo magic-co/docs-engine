@@ -7,7 +7,7 @@ export const diagrams: Rule = {
   check(site) {
     return [...site.pages.values()].flatMap((page) =>
       page.diagrams.flatMap((block) => {
-        const checked = checkDiagram(block);
+        const checked = checkDiagram(block, { root: site.root, page: page.path });
         return checked.ok ? [] : checked.problems.map((problem) => ({ file: page.path, ...problem }));
       }),
     );
