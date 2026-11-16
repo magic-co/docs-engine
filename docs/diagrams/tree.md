@@ -1,6 +1,6 @@
 # The tree diagram
 
-A tree diagram shows a hierarchy, such as a team chart. Each node names its parent. The engine places the nodes: a parent sits over the middle of its children. Write it as a `yaml tree` diagram block.
+A tree diagram shows a hierarchy, such as a team chart. Each node names its parent. The engine places the nodes: a parent sits over the middle of its children. Two or more children that have no children of their own stack under their parent, so a wide team stays narrow. Write it as a `yaml tree` diagram block.
 
 ## Example
 

@@ -45,7 +45,7 @@ Each task has these fields:
 | `details` | no | An ordered map of labels to a text or a list of texts. The card and the row also give the dates. |
 | `href` | no | The link target. Without it, the task links to its row in the table. |
 
-Dates use the form `YYYY-MM-DD`. A chart of up to 120 days has a tick each week. A longer chart has a tick each month. Past about 13 months, it labels only each quarter.
+Dates use the form `YYYY-MM-DD`. A chart of up to 120 days has a tick each week. A longer chart has a tick each month. It labels each month, quarter, half year or year, as the space allows.
 
 ## Checks
 
