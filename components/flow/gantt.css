@@ -1,0 +1,16 @@
+.docs-gantt-zone { fill: rgba(45, 49, 66, 0.03); stroke: var(--rule-solid); stroke-dasharray: 4, 3; }
+.docs-gantt-ticks line { stroke: var(--rule); stroke-width: 1; }
+.docs-gantt-ticks line.docs-gantt-major { stroke: var(--rule-solid); }
+.docs-gantt-ticks text { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.04em; fill: var(--soft-text); }
+.docs-gantt-axis { stroke: var(--muted); }
+
+docs-flow-node[data-kind^="gantt"] a { justify-content: flex-start; padding: 0; border: 0; border-radius: 4px; background: none; font-weight: 500; }
+docs-flow-node[data-kind^="gantt"] a:is([href]:hover, [data-open]) { background: var(--accent-tint); box-shadow: none; }
+.docs-gantt-label { position: absolute; left: 0; padding-left: 1.2%; overflow: hidden; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
+.docs-gantt-bar { position: absolute; top: 26%; height: 48%; border-radius: 3px; background: var(--ink); }
+docs-flow-node[data-kind="gantt-focal"] .docs-gantt-bar { background: var(--accent); }
+.docs-gantt-mark { position: absolute; top: 50%; width: 0.9em; height: 0.9em; background: var(--accent); transform: translate(-50%, -50%) rotate(45deg); }
+
+.docs-flow-legend i[data-kind^="gantt"] { height: 8px; border: 0; background: var(--ink); }
+.docs-flow-legend i[data-kind="gantt-focal"] { background: var(--accent); }
+.docs-flow-legend i[data-kind="gantt-milestone"] { width: 9px; height: 9px; margin-left: 3px; background: var(--accent); transform: rotate(45deg); border-radius: 0; }

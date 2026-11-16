@@ -5,9 +5,11 @@ import type { DiagramBlock, RepoPath } from "../site/types.ts";
 import { ModuleError, runModule } from "./module.ts";
 import { figure } from "./figure/index.ts";
 import { flow } from "./flow/index.ts";
+import { gantt } from "./gantt/index.ts";
+import { tree } from "./tree/index.ts";
 import type { DiagramType } from "./types.ts";
 
-export const DIAGRAM_TYPES: Record<string, DiagramType<never>> = { flow, figure };
+export const DIAGRAM_TYPES: Record<string, DiagramType<never>> = { flow, tree, gantt, figure };
 
 export interface Problem {
   line: number;

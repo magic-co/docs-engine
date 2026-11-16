@@ -1,0 +1,7 @@
+# The people of the made-up roastery. The tree on the tree diagram page reads this file.
+people:
+  owner: { role: Owner, name: Ada, reports_to: null, tasks: [Set the prices, Buy the green beans] }
+  head-roaster: { role: Head Roaster, name: Bo, reports_to: owner, tasks: [Roast each batch, Cup each batch] }
+  shop-lead: { role: Shop Lead, name: Cy, reports_to: owner, tasks: [Open the shop, Train the baristas] }
+  roast-helper: { role: Roast Helper, name: Di, reports_to: head-roaster, tasks: [Weigh the beans] }
+  barista: { role: Barista, name: Ed and Flo, reports_to: shop-lead, tasks: [Make the drinks] }

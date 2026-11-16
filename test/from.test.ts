@@ -16,6 +16,7 @@ describe("a diagram block with from", () => {
   it("draws the default export of the module, relative to the page", () => {
     const root = repo({ "docs/stock/stock.md": page("data/stock.mjs"), "docs/stock/data/stock.mjs": `export default ${JSON.stringify(FLOW)};\n` });
     const result = respond(loadSite(root), "/stock/stock/", "");
+    if (result.status !== 200) throw new Error("no page");
     expect(result.html).toContain('<docs-flow role="group" aria-label="Stock flow"');
     expect(result.html.match(/<docs-flow-node /g)).toHaveLength(2);
   });

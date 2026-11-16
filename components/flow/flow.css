@@ -63,3 +63,6 @@ ui-hover-card-content .docs-card-hint { margin-top: 10px; padding-top: 8px; bord
 
 .docs-flow-details td:first-child { font-weight: 600; white-space: nowrap; }
 .docs-flow-details tr:target td { background: var(--accent-tint); transition: background 0.3s; }
+
+docs-flow-node a > span { display: flex; flex-direction: column; gap: 0.25em; }
+docs-flow-node a small { color: var(--soft-text); font: 500 0.8em / 1.2 var(--mono); }
