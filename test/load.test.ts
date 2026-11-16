@@ -16,7 +16,6 @@ describe("loadSite", () => {
     expect(outline(site.nav)).toEqual({
       "Roastery docs /": [
         { "Decisions -": ["Roast in small batches /adr/small-batches/", "Ship on Monday /adr/ship-on-monday/"] },
-        "Glossary /glossary/",
         {
           "Guides /guides/": [
             "Roast a batch /guides/roasting/",
@@ -27,8 +26,15 @@ describe("loadSite", () => {
           ],
         },
         { "Orders -": ["Orders /orders/flow/"] },
+        "Glossary /glossary/",
       ],
     });
+  });
+
+  it("labels the glossary Glossary in the nav, whatever its first heading", () => {
+    const site = loadSite(repo({ "GLOSSARY.md": "# Roastery\n\nThe terms.\n" }));
+    expect(site.nav.children.at(-1)).toEqual({ title: "Glossary", route: "/glossary/", children: [] });
+    expect(pageAt(site, "GLOSSARY.md")?.title).toBe("Roastery");
   });
 
   it("keeps research in the site but out of the nav", () => {
@@ -75,4 +81,11 @@ describe("loadSite", () => {
   it("rejects a config that does not match the schema", () => {
     expect(() => loadSite(repo({ "docs.config.json": '{ "titel": "x" }' }))).toThrow(/docs.config.json/);
   });
+  it("refuses a theme file that does not exist or is outside the repo", () => {
+    expect(() => loadSite(repo({ "docs.config.json": '{ "theme": "docs/theme.css" }' }))).toThrow(/the theme file "docs\/theme.css" does not exist/);
+    expect(() => loadSite(repo({ "docs.config.json": '{ "theme": "../theme.css" }' }))).toThrow(/inside the repo/);
+    expect(() => loadSite(repo({ "docs.config.json": '{ "theme": "docs/theme.scss" }' }))).toThrow(/docs.config.json/);
+    expect(loadSite(repo({ "docs/theme.css": ":root {}\n", "docs.config.json": '{ "theme": "docs/theme.css" }' })).config.theme).toBe("docs/theme.css");
+  });
+
 });

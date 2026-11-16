@@ -103,10 +103,10 @@ function folderNode(folder: Folder): NavNode {
   const fixed = LAYOUT.find(({ place }) => place.kind === "folder" && place.path === path)?.section;
   const title = fixed ?? folder.section?.title ?? humanize(stripOrder(folder.segments.at(-1) ?? ""));
   const entries = [
-    ...folder.pages.map((page) => ({ name: posix.basename(page.path), node: leaf(page) })),
-    ...[...folder.folders.entries()].map(([name, sub]) => ({ name, node: folderNode(sub) })),
+    ...folder.pages.map((page) => ({ name: posix.basename(page.path), node: leaf(page), fixed: page.area.place.kind === "file" })),
+    ...[...folder.folders.entries()].map(([name, sub]) => ({ name, node: folderNode(sub), fixed: false })),
   ];
-  entries.sort((a, b) => compareEntries(a.name, a.node.title, b.name, b.node.title));
+  entries.sort((a, b) => Number(a.fixed) - Number(b.fixed) || compareEntries(a.name, a.node.title, b.name, b.node.title));
   return {
     title,
     route: folder.section?.route,
@@ -124,7 +124,7 @@ function compareEntries(nameA: string, titleA: string, nameB: string, titleB: st
 }
 
 function leaf(page: Page): NavNode {
-  return { title: page.title, route: page.route, children: [] };
+  return { title: page.area.navTitle ?? page.title, route: page.route, children: [] };
 }
 
 function humanize(name: string): string {

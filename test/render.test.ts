@@ -81,6 +81,12 @@ describe("page render", () => {
     expect(page).toMatch(/<footer class="docs-footer"><a href="\/research\/">Research<\/a><\/footer>/);
   });
 
+  it("gives the nav a Menu button that controls the nav tree", () => {
+    const page = html({}, "/guides/");
+    expect(page).toContain('<button class="docs-nav-toggle" type="button" aria-expanded="false" aria-controls="docs-nav-tree">Menu</button>');
+    expect(page).toContain('<div class="docs-nav-tree" id="docs-nav-tree">');
+  });
+
   it("encodes each route segment in the nav, in links and in node links", () => {
     const changes = {
       "docs/guides/a&b.md": "# Beans and brew\n",
