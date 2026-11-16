@@ -34,8 +34,9 @@ export function renderContent(site: Site, page: Page): string {
   return toHtml.stringify(toHtml.runSync(tree as Root) as never);
 }
 
-function renderDiagram(node: Code, { type, checked, id }: PageDiagram, slugger: GithubSlugger, links: Pick<RenderContext, "root" | "href" | "file">): string {
-  if (!checked.ok || id === undefined) return diagramError(type, checked.ok ? [] : checked.problems, node.value);
+function renderDiagram(node: Code, diagram: PageDiagram, slugger: GithubSlugger, links: Pick<RenderContext, "root" | "href" | "file">): string {
+  if (diagram.kind === "invalid") return diagramError(diagram.type, diagram.checked.problems, node.value);
+  const { checked, id } = diagram;
   return checked.type.render(checked.data, { id, ...links, anchor: (name) => slugger.slug(name) });
 }
 

@@ -55,8 +55,8 @@ function sourceFlow(site: Site, page: Page, source: string): Flow | string {
   if (target.kind !== "local" || !target.page || !target.anchor) return `the source \`${source}\` is not a page in the site`;
   const slugger = new GithubSlugger();
   headingSlugs(target.page.tree, slugger);
-  for (const { type, checked, id } of pageDiagrams(target.page.tree, slugger, { root: site.root, page: target.page.path }).values()) {
-    if (id === target.anchor && type === "flow" && checked.ok) return checked.data as Flow;
+  for (const diagram of pageDiagrams(target.page.tree, slugger, { root: site.root, page: target.page.path }).values()) {
+    if (diagram.kind === "valid" && diagram.id === target.anchor && diagram.type === "flow") return diagram.checked.data as Flow;
   }
   return `the source \`${source}\` names no flow diagram. Use the id of the flow: the slug of its title`;
 }
