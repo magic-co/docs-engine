@@ -71,13 +71,18 @@ describe("docs CLI", () => {
       expect(urls.length, page).toBeGreaterThan(0);
       expect(urls.filter((url) => !url.startsWith("/roastery/")), page).toEqual([]);
     }
-    expect(readFileSync(join(out, "index.html"), "utf8")).toContain('href="/roastery/assets/client.css"');
+    const home = readFileSync(join(out, "index.html"), "utf8");
+    expect(home).toContain('href="/roastery/assets/client.css"');
+    expect(home).toContain('href="/roastery/guides/roasting/"');
+    expect(home).not.toMatch(/href="(?![/#]|[a-z]+:)/);
   });
 
-  it("build stops when the base path does not start and end with a slash", () => {
-    const result = docs("build", "--root", repo(), "--base", "roastery");
+  it.each(["roastery", "/roastery", "/\\example.org/", '/r"o/', "//roastery/"])("build stops on the base path %s", (base) => {
+    const root = repo();
+    const result = docs("build", "--root", root, "--out", join(root, "site-out"), "--base", base);
     expect(result.status).toBe(1);
     expect(result.stderr).toContain("the base path must start and end with");
+    expect(existsSync(join(root, "site-out"))).toBe(false);
   });
 
   it("build removes the pages of deleted sources and keeps other files", () => {

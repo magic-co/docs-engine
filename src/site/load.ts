@@ -4,6 +4,7 @@ import { readGeneratedMark } from "../generated.ts";
 import { readConfig } from "./config.ts";
 import { type Area, areaOf, DOCS_DIR, LAYOUT } from "./layout.ts";
 import { diagramBlocks, firstHeading, parseMarkdown } from "./markdown.ts";
+import { checkBase } from "./url.ts";
 import type { NavNode, Page, RepoPath, Route, Site } from "./types.ts";
 
 const ORDER_PREFIX = /^(\d+)-/;
@@ -19,7 +20,7 @@ export function loadSite(root: string, options: { base?: string } = {}): Site {
   const routes = new Map<Route, Page>();
   for (const page of pages.values()) if (page.route) routes.set(page.route, page);
   const title = config.title ?? pages.get("README.md" as RepoPath)?.title ?? basename(root);
-  return { root, base: options.base ?? "/", config, title, pages, routes, nav: buildNav(title, [...pages.values()]) };
+  return { root, base: checkBase(options.base ?? "/"), config, title, pages, routes, nav: buildNav(title, [...pages.values()]) };
 }
 
 function markdownFiles(root: string): RepoPath[] {
