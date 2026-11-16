@@ -52,11 +52,13 @@ Read [the layout and the lint rules](docs/guides/layout-and-lint.md) for the ful
 ```json
 {
   "title": "Roastery docs",
+  "theme": "docs/theme.css",
   "lint": { "ignorePaths": ["dist/**"] }
 }
 ```
 
 - `title` is the site title. Without it, the site title is the first heading of `README.md`.
+- `theme` is a CSS file that changes the default theme. Read [theme a site](docs/guides/theme.md).
 - `lint.ignorePaths` holds globs. The `code-paths` rule does not check a code span that matches one of them.
 - `lint.ignorePages` holds globs of page paths. The `code-paths` rule does not check the pages that match one of them.
 

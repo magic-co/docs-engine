@@ -18,8 +18,13 @@ ${head}
 <body>
 <div class="docs-layout">
 <nav class="docs-nav" aria-label="Docs">
+<div class="docs-nav-head">
 <a class="docs-site-title" href="${esc(site.base)}"${page?.route === "/" ? ' aria-current="page"' : ""}>${esc(site.title)}</a>
+<button class="docs-nav-toggle" type="button" aria-expanded="false" aria-controls="docs-nav-tree">Menu</button>
+</div>
+<div class="docs-nav-tree" id="docs-nav-tree">
 ${navList(site, site.nav.children, page?.route)}
+</div>
 </nav>
 <main class="docs-main">
 <article class="docs-page">

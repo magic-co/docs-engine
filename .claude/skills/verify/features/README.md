@@ -35,9 +35,10 @@ Each feature file starts with an H1 title and one paragraph about the user-visib
 
 ## Features
 
-- [Browse the site](./browse-site.md) covers the home page, the nav, the routes, the slash redirect, the pages that are not in the site and the 404 page.
+- [Browse the site](./browse-site.md) covers the home page, the nav, the Menu button on a narrow screen, the routes, the slash redirect, the pages that are not in the site and the 404 page.
 - [Flow diagram](./flow-diagram.md) covers the hover card, the keyboard focus and arrow keys, and the links of a node to its table row or its `href`.
 - [Figure](./figure.md) covers a `yaml figure` block: the drawing and the script of its module, and the error in place of a figure whose module fails.
 - [Live reload](./live-reload.md) covers the reload of an open page after an edit, and a diagram error in the page.
 - [Lint the docs](./lint.md) covers the findings of each rule, the line format, the exit codes, the figure source check and the code-path options.
+- [Theme the site](./theme.md) covers the default theme and its fonts, the `theme` CSS file of a repo, its live update in `docs dev`, and the theme in the static site.
 - [Build the static site](./static-build.md) covers the files that `docs build` writes, the stop on a lint error and the flow diagram in the static site.

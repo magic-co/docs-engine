@@ -13,6 +13,8 @@ export interface Area {
   visibility: Visibility;
   required: boolean;
   section?: string;
+  /** The nav label of a fixed file. The nav lists fixed files after the sections. */
+  navTitle?: string;
 }
 
 export const DOCS_DIR = "docs";
@@ -22,7 +24,7 @@ export const NOT_FOUND = "404.html";
 
 export const LAYOUT: readonly Area[] = [
   { name: "home", place: { kind: "file", path: "README.md", route: "/" }, visibility: "nav", required: true },
-  { name: "glossary", place: { kind: "file", path: "GLOSSARY.md", route: "/glossary/" }, visibility: "nav", required: true },
+  { name: "glossary", place: { kind: "file", path: "GLOSSARY.md", route: "/glossary/" }, visibility: "nav", required: true, navTitle: "Glossary" },
   { name: "agents", place: { kind: "file", path: "AGENTS.md" }, visibility: "hidden", required: true },
   { name: "adr", place: { kind: "folder", path: "docs/adr" }, visibility: "nav", required: true, section: "Decisions" },
   { name: "research", place: { kind: "folder", path: "docs/research" }, visibility: "linked", required: true },

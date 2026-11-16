@@ -7,7 +7,8 @@ import { CLIENT_ENTRY, ENGINE_ROOT } from "./paths.ts";
 import { notFound, renderPage } from "./render/site.ts";
 import { ASSETS_DIR, MANIFEST, NOT_FOUND } from "./site/layout.ts";
 import { loadSite } from "./site/load.ts";
-import type { Finding } from "./site/types.ts";
+import type { Finding, Site } from "./site/types.ts";
+import { themePlugin } from "./theme.ts";
 
 export async function buildSite(options: { root: string; out: string; base?: string }): Promise<{ findings: Finding[]; pages: number }> {
   const site = loadSite(options.root, { base: options.base });
@@ -19,7 +20,7 @@ export async function buildSite(options: { root: string; out: string; base?: str
   for (const page of site.routes.values()) {
     files.set(posix.join(...(page.route ?? "/").split("/").filter(Boolean), "index.html"), renderPage(site, page, HEAD));
   }
-  for (const [name, bytes] of await bundleClient()) files.set(posix.join(ASSETS_DIR, name), bytes);
+  for (const [name, bytes] of await bundleClient(site)) files.set(posix.join(ASSETS_DIR, name), bytes);
   for (const file of files.keys()) if (!inside(options.out, file)) throw new Error(`docs: the page file \`${file}\` is outside ${options.out}`);
   const stale = readManifest(options.out).filter((file) => !files.has(file));
   for (const [file, contents] of files) {
@@ -32,13 +33,14 @@ export async function buildSite(options: { root: string; out: string; base?: str
 }
 
 // Bundle into a scratch folder first, so a failed bundle changes no output and Vite empties no folder of the user.
-async function bundleClient(): Promise<Map<string, Buffer>> {
+async function bundleClient(site: Site): Promise<Map<string, Buffer>> {
   const dir = mkdtempSync(join(tmpdir(), "docs-engine-client-"));
   try {
     await build({
       configFile: false,
       root: ENGINE_ROOT,
       logLevel: "warn",
+      plugins: [themePlugin(() => site)],
       define: { "process.env.NODE_ENV": JSON.stringify("production") },
       build: { outDir: dir, emptyOutDir: true, lib: { entry: CLIENT_ENTRY, formats: ["es"], fileName: () => "client.js", cssFileName: "client" } },
     });
