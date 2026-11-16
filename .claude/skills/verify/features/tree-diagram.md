@@ -6,7 +6,7 @@ A `yaml tree` block becomes an interactive hierarchy. The engine places each nod
 
 - `tree-render` draws one link for each node in a group named after the title. A node with a `note` shows it on a second line.
 - `tree-hover-card` opens a card with `<relation> <parent>`, the label and the details.
-- `tree-click-row` goes to `#<diagram id>-<node id>`.
+- `tree-click-row` goes to `#<diagram id>-<node id>`. Only a node with a `description` or `details` has a row. A node with neither has no link target.
 - `tree-from` draws the data of the module `data/team.mjs`, which reads `data/team.yaml`.
 
 ## How to get to it (user POV)

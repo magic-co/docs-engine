@@ -38,7 +38,7 @@ Each node has these fields:
 | `note` | no | A short second line in the node, such as who fills it. |
 | `description` | no | The text of the card and of the table row. |
 | `details` | no | An ordered map of labels to a text or a list of texts. |
-| `href` | no | The link target. Without it, the node links to its row in the table. |
+| `href` | no | The link target. Without it, a node with a `description` or `details` links to its row in the table. Other nodes have no link target. |
 
 ## Checks
 

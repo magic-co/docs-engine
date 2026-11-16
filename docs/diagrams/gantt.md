@@ -22,7 +22,7 @@ tasks:
 
 ## Opening day
 
-The shop opens on the day after the last training day. This heading is the `href` target of the "Doors open" milestone.
+The doors open on the last training day, at the end of the training. This heading is the `href` target of the "Doors open" milestone.
 
 ## The yaml block
 
@@ -38,7 +38,7 @@ Each task has these fields:
 | --- | --- | --- |
 | `label` | yes | The text of the row. |
 | `section` | yes | The id of a section. |
-| `on`, `start` or `after` | one of the three | `on`: the date of a milestone. `start`: the first day. `after`: a task id. The task starts on the day after that task ends. |
+| `on`, `start` or `after` | one of the three | `on`: the date of a milestone. `start`: the first day. `after`: a task id. The task starts on the day after that task ends. A milestone sits on the day that task ends. |
 | `end`, `days` or `weeks` | no | The last day (inclusive), or the length. A task with no `on` and no end is a milestone. A milestone `after` a task sits on its last day. |
 | `focal` | no | `true` for the one task that stands out, such as the date that cannot move. |
 | `description` | no | The text of the card and of the table row. |

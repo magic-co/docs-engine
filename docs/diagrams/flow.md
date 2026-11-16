@@ -99,7 +99,7 @@ Each node has these fields:
 | `group` | no | The id of a group. |
 | `description` | no | The text of the card and of the table row. |
 | `details` | no | An ordered map of labels to a text or a list of texts, such as `Entry` and `Exit`. |
-| `href` | no | The link target. Without it, the node links to its row in the table. |
+| `href` | no | The link target. Without it, a node with a `description` or `details` links to its row in the table. Other nodes have no link target. |
 
 The engine prints a table row for each node that has a `description` or `details`. The id of the row is `<diagram id>-<node id>`. The diagram id comes from the title, so the "Roast batch" row above has the id `order-flow-roast`. When a heading or another row on the page already uses that id, the engine adds a number, as it does for two headings with the same text: `order-flow-roast-1`.
 
