@@ -5,7 +5,8 @@
 ## Sub-features
 
 - `site-home` serves `README.md` at `/` with the site title from `docs.config.json`.
-- `site-nav` shows the sections and pages from the folder tree, with `docs/adr/` as "Decisions" and the current page marked.
+- `site-nav` shows the sections and pages from the folder tree, with `docs/adr/` as "Decisions", "Glossary" after the sections, and the current page marked.
+- `site-menu` closes the nav on a screen narrower than 800px. The `Menu` button opens and closes it.
 - `site-routes` serves each page at its route, such as `/guides/writing-pages/` and `/glossary/`.
 - `site-redirect` answers a route without the end slash with a 301 to the route with the slash.
 - `site-research` serves `docs/research/` but keeps it out of the nav. The footer links to it.
@@ -26,8 +27,9 @@ Preconditions:
 - The site copy is in the baseline state.
 
 - **Home.** Open `/`. Step `{"goto": "/"}`, then `{"expectVisible": {"role": "heading", "name": "docs-engine"}}`. The log shows `status 200`. The page title is `docs-engine`.
-- **Nav.** Read the nav. Step `{"aria": "home"}`. The snapshot has `navigation "Docs"` with the groups `Decisions`, `Diagrams`, `Guides` and the link `Glossary`. It has no `Research` and no `Agent notes` entry.
+- **Nav.** Read the nav. Step `{"aria": "home"}`. The snapshot has `navigation "Docs"` with the groups `Decisions`, `Diagrams`, `Guides`, and then the link `Glossary`. It has no `Research` and no `Agent notes` entry.
 - **Open a page from the nav.** Choose `Write pages`. Steps `{"click": {"role": "link", "name": "Write pages"}}`, `{"expectUrl": "/guides/writing-pages/$"}`, `{"expectVisible": {"css": "nav a[aria-current=page]", "hasText": "Write pages"}}`. The page heading is `Write pages`.
+- **Menu on a narrow screen.** Steps `{"viewport": [390, 844]}`, `{"goto": "/guides/writing-pages/"}`, `{"expectHidden": {"role": "link", "name": "Write pages"}}`, `{"click": {"role": "button", "name": "Menu"}}`, `{"expectVisible": {"css": "nav a[aria-current=page]", "hasText": "Write pages"}}`, `{"expectEval": "document.querySelector('.docs-nav-toggle').getAttribute('aria-expanded') === 'true'"}`, `{"screenshot": "menu-open"}`, `{"click": {"role": "button", "name": "Menu"}}`, `{"expectHidden": {"role": "link", "name": "Write pages"}}`. On a wide screen the button is hidden and the nav is open.
 - **Glossary.** Step `{"goto": "/glossary/"}`. The log shows `status 200`.
 - **Slash redirect.** Run `curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' "$(cat $DOCS_VERIFY_RUN/instance/url)/guides"`. The output is `301 <url>/guides/`.
 - **Research.** Step `{"click": {"role": "link", "name": "Research"}}` from any page. The URL ends in `/research/` and the page has status 200.
@@ -40,4 +42,5 @@ Preconditions:
 - The dev server answers only for routes without a file extension. A request such as `/README.md` goes to Vite, not to the docs routes.
 - The site title comes from `docs.config.json`. Without a `title` there, it is the first heading of `README.md`.
 - The nav sorts pages by title, not by file name. A number prefix such as `01-` sets the order and is not in the route.
+- The fixture `GLOSSARY.md` has the heading "Glossary", so the nav label and the page heading agree there. In another repo the page heading can differ, but the nav label is always "Glossary".
 - `docs dev` uses the next free port when the port is in use. Always read the URL from `start`, not from the port that you asked for.

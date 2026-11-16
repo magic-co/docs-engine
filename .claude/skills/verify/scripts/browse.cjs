@@ -73,6 +73,7 @@ async function run(page, step) {
       return out.trim().split("\n").slice(-5).join(" | ");
     }
     case "wait": await page.waitForTimeout(arg); return "";
+    case "viewport": await page.setViewportSize({ width: arg[0], height: arg[1] }); return `${arg[0]}x${arg[1]}`;
     case "aria": {
       const snapshot = await page.locator("body").ariaSnapshot();
       writeFileSync(join(outDir, `${arg}.aria.yaml`), snapshot);
