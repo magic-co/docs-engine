@@ -9,7 +9,7 @@ const W = 880;
 const LABEL_W = 280;
 const PAD = 8;
 const RIGHT = 16;
-const AXIS = 46;
+const AXIS = 52;
 const SECTION = 28;
 const ROW = 30;
 const WEEKS_UNTIL = 120;
@@ -18,8 +18,13 @@ const MONTHS_UNTIL = 400;
 interface Tick {
   date: string;
   major: boolean;
-  label?: string;
+  /** The day number, for a weekly tick. */
+  day?: string;
+  /** The month label, on the row above the day numbers. */
+  month?: string;
 }
+
+const CHAR = 6.6;
 
 export function renderGantt(gantt: Gantt, context: RenderContext): string {
   const { timed } = timeTasks(gantt);
@@ -50,10 +55,10 @@ export function renderGantt(gantt: Gantt, context: RenderContext): string {
     `<g class="docs-gantt-ticks">${ticks
       .map(
         (tick) =>
-          `<line${tick.major ? ' class="docs-gantt-major"' : ""} x1="${round(x(tick.date))}" y1="${AXIS - (tick.major ? 14 : 6)}" x2="${round(x(tick.date))}" y2="${height - 8}"/>` +
-          (tick.label ? `<text x="${round(x(tick.date) + 4)}" y="${AXIS - 6}">${esc(tick.label)}</text>` : ""),
+          `<line${tick.major ? ' class="docs-gantt-major"' : ""} x1="${round(x(tick.date))}" y1="${AXIS - (tick.major ? 30 : 4)}" x2="${round(x(tick.date))}" y2="${height - 8}"/>` +
+          (tick.day ? `<text x="${round(x(tick.date) + 4)}" y="${AXIS - 6}">${esc(tick.day)}</text>` : ""),
       )
-      .join("")}</g>` +
+      .join("")}${labels(ticks, x)}</g>` +
     `<line class="docs-gantt-axis" x1="${LABEL_W}" y1="${AXIS}" x2="${W - RIGHT}" y2="${AXIS}"/>`;
 
   const used = new Set(nodes.map((item) => item.kind));
@@ -97,10 +102,10 @@ function node(item: Timed, section: string, y: number, x: (date: string) => numb
     h: ROW,
     label: task.label,
     kind: item.milestone ? "gantt-milestone" : task.focal ? "gantt-focal" : "gantt-task",
-    eyebrow: `${section} · ${item.milestone ? "Milestone" : "Task"}`,
+    eyebrow: `${section} · ${when(item)}`,
     meta: when(item),
     description: task.description,
-    details: { When: when(item), ...(after === undefined ? {} : { After: after }), ...task.details },
+    details: { ...(after === undefined ? {} : { After: after }), ...task.details },
     href: task.href,
     inner: `<span class="docs-gantt-label" style="width:${pct(LABEL_W - PAD - 12, span)}">${esc(task.label)}</span>${mark}`,
   };
@@ -124,7 +129,7 @@ function axis(timed: Timed[]): { first: string; last: string; ticks: Tick[] } {
     const last = startOfWeek(addDays(end, 6), 1);
     for (let date = first; date <= last; date = addDays(date, 7)) {
       const newMonth = date === first || date.slice(5, 7) !== addDays(date, -7).slice(5, 7);
-      ticks.push({ date, major: newMonth, label: newMonth ? `${month(date, date === first || date.slice(5, 7) === "01")} ${Number(date.slice(8))}` : String(Number(date.slice(8))) });
+      ticks.push({ date, major: newMonth, day: String(Number(date.slice(8))), month: newMonth ? month(date, date === first || date.slice(5, 7) === "01") : undefined });
     }
     return { first, last, ticks };
   }
@@ -134,9 +139,22 @@ function axis(timed: Timed[]): { first: string; last: string; ticks: Tick[] } {
   for (let date = first; date <= last; date = addMonths(date, 1)) {
     const index = Number(date.slice(5, 7)) - 1;
     const labelled = !quarterly || index % 3 === 0;
-    ticks.push({ date, major: index === 0 || date === first, label: labelled && date < last ? month(date, date === first || index === 0) : undefined });
+    ticks.push({ date, major: index === 0 || date === first, month: labelled && date < last ? month(date, date === first || index === 0) : undefined });
   }
   return { first, last, ticks };
+}
+
+// A month label that would run into the label before it is left out.
+function labels(ticks: Tick[], x: (date: string) => number): string {
+  let free = -Infinity;
+  return ticks
+    .flatMap((tick) => {
+      const left = x(tick.date) + 4;
+      if (tick.month === undefined || left < free) return [];
+      free = left + tick.month.length * CHAR + 8;
+      return [`<text class="docs-gantt-month" x="${round(left)}" y="${AXIS - 22}">${esc(tick.month)}</text>`];
+    })
+    .join("");
 }
 
 function pct(value: number, total: number): string {

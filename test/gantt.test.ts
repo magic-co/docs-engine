@@ -46,14 +46,14 @@ describe("gantt", () => {
 
   it("gives the dates in the card and in the table", () => {
     const page = html();
-    expect(page).toContain('<p class="docs-card-kind">Build · Task</p><p class="docs-card-title">Install the roaster</p>');
-    expect(page).toContain("<dt>When</dt><dd>Mar 15 – 17, 2027 (3 days)</dd><dt>After</dt><dd>Fit out the shop</dd>");
+    expect(page).toContain('<p class="docs-card-kind">Build · Mar 15 – 17, 2027 (3 days)</p><p class="docs-card-title">Install the roaster</p>');
+    expect(page).toContain("<dt>After</dt><dd>Fit out the shop</dd>");
     expect(page).toContain('<td>Doors open</td><td>Mar 17, 2027</td>');
     expect(page).toContain('<docs-flow-node value="roaster" data-kind="gantt-focal"');
   });
 
   it("labels each month for a span of a few months", () => {
-    const labels = [...html().matchAll(/<text x="[\d.]+" y="\d+">([^<]+)<\/text>/g)].map((match) => match[1]);
+    const labels = [...html().matchAll(/<text class="docs-gantt-month" x="[\d.]+" y="\d+">([^<]+)<\/text>/g)].map((match) => match[1]);
     expect(labels).toEqual(["Mar 2027", "Apr", "May", "Jun", "Jul", "Aug"]);
   });
 

@@ -6,7 +6,7 @@ docs-flow { position: relative; display: block; width: 100%; min-width: calc(var
 docs-flow > svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 docs-flow marker polygon { fill: var(--muted); }
 .docs-flow-group { fill: rgba(45, 49, 66, 0.03); stroke: var(--rule-solid); stroke-dasharray: 4, 3; rx: 8; }
-.docs-flow-group-label, .docs-flow-edge-labels text { font-family: var(--mono); font-size: 9px; letter-spacing: 0.06em; fill: var(--muted); }
+.docs-flow-group-label, .docs-flow-edge-labels text { font-family: var(--mono); font-size: 10px; letter-spacing: 0.06em; fill: var(--muted); }
 .docs-flow-group-label { letter-spacing: 0.14em; fill: var(--soft-text); }
 .docs-flow-edge-labels { text-anchor: middle; }
 .docs-flow-edge-labels rect { fill: var(--card); }
@@ -65,4 +65,4 @@ ui-hover-card-content .docs-card-hint { margin-top: 10px; padding-top: 8px; bord
 .docs-flow-details tr:target td { background: var(--accent-tint); transition: background 0.3s; }
 
 docs-flow-node a > span { display: flex; flex-direction: column; gap: 0.25em; }
-docs-flow-node a small { color: var(--soft-text); font: 500 0.8em / 1.2 var(--mono); }
+docs-flow-node a small { color: var(--soft-text); font: 500 0.88em / 1.2 var(--mono); }
