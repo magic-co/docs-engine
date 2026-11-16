@@ -12,6 +12,7 @@
 - `build-prune` removes the pages of deleted docs on the next good build, and keeps files that it did not write.
 - `build-out` writes to the folder of `--out`.
 - `build-client` gives the static site the same interactive flow diagram as `docs dev`.
+- `build-base` with `--base /<path>/` starts each site URL (nav, links, flow links, assets, 404 home link) with that path. A base that does not start and end with `/` stops the build with exit code 1.
 
 ## How to get to it (user POV)
 

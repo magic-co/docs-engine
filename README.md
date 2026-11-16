@@ -11,7 +11,7 @@ The engine needs Node 24 or later. The package is in GitHub Packages. GitHub Pac
 //npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
 ```
 
-Set `NODE_AUTH_TOKEN` to a GitHub token that can read packages. In GitHub Actions, use `secrets.GITHUB_TOKEN` with the `packages: read` permission. Then install:
+Set `NODE_AUTH_TOKEN` to a GitHub token that can read packages. In GitHub Actions, use `secrets.GITHUB_TOKEN` with the `packages: read` permission. The repo also needs the Read role in "Manage Actions access" of the package settings. Without it, `npm ci` fails with 403. Then install:
 
 ```sh
 npm install --save-dev @magic-co/docs-engine
@@ -22,7 +22,7 @@ npm install --save-dev @magic-co/docs-engine
 | Command | What it does |
 | --- | --- |
 | `docs dev [--root .] [--port N]` | Serves the site on 127.0.0.1 and reloads the browser when a page changes. |
-| `docs build [--root .] [--out dist-site]` | Writes static HTML for each page. Removes the pages that it wrote before for deleted sources, and keeps other files. Stops with exit code 1 when the lint finds an error, and then does not change the output folder. |
+| `docs build [--root .] [--out dist-site] [--base /]` | Writes static HTML for each page. Removes the pages that it wrote before for deleted sources, and keeps other files. Stops with exit code 1 when the lint finds an error, and then does not change the output folder. Use `--base` when a host serves the site under a path. For a GitHub Pages project site, use `--base /<repo>/`. |
 | `docs lint [--root .]` | Checks the layout, the links, the code paths, the diagrams, the figures and the generated pages. |
 
 `docs dev` uses the `--port` value, then the `PORT` variable, then port 4173. When the port is in use, it uses the next free port. It prints the URL.

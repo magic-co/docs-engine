@@ -6,11 +6,12 @@ import { formatFinding, hasErrors, lint } from "./lint/index.ts";
 import { DEFAULT_PORT, startDev } from "./server/dev.ts";
 import { ConfigError } from "./site/config.ts";
 import { loadSite } from "./site/load.ts";
+import { checkBase } from "./site/url.ts";
 import type { Finding } from "./site/types.ts";
 
 const USAGE = `Usage:
   docs dev [--root .] [--port N]
-  docs build [--root .] [--out dist-site]
+  docs build [--root .] [--out dist-site] [--base /]
   docs lint [--root .]`;
 
 async function main(argv: string[]): Promise<number> {
@@ -21,6 +22,7 @@ async function main(argv: string[]): Promise<number> {
       root: { type: "string", default: "." },
       port: { type: "string" },
       out: { type: "string", default: "dist-site" },
+      base: { type: "string", default: "/" },
       help: { type: "boolean", short: "h" },
     },
   });
@@ -33,7 +35,7 @@ async function main(argv: string[]): Promise<number> {
     }
     case "build": {
       const out = resolve(values.out);
-      const result = await buildSite({ root, out });
+      const result = await buildSite({ root, out, base: checkBase(values.base) });
       report(result.findings);
       if (hasErrors(result.findings)) {
         console.log(`docs: build stopped; ${out} is not changed`);

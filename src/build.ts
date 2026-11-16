@@ -9,10 +9,10 @@ import { ASSETS_DIR, MANIFEST, NOT_FOUND } from "./site/layout.ts";
 import { loadSite } from "./site/load.ts";
 import type { Finding } from "./site/types.ts";
 
-const HEAD = `<link rel="stylesheet" href="/${ASSETS_DIR}/client.css">\n<script type="module" src="/${ASSETS_DIR}/client.js"></script>`;
-
-export async function buildSite(options: { root: string; out: string }): Promise<{ findings: Finding[]; pages: number }> {
-  const site = loadSite(options.root);
+export async function buildSite(options: { root: string; out: string; base?: string }): Promise<{ findings: Finding[]; pages: number }> {
+  const site = loadSite(options.root, { base: options.base });
+  const assets = `${site.base}${ASSETS_DIR}`;
+  const HEAD = `<link rel="stylesheet" href="${assets}/client.css">\n<script type="module" src="${assets}/client.js"></script>`;
   const findings = lint(site);
   if (hasErrors(findings)) return { findings, pages: 0 };
   const files = new Map<string, string | Buffer>([[NOT_FOUND, notFound(site, HEAD)]]);
