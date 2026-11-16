@@ -26,9 +26,9 @@
           "group": { "type": "string" },
           "description": { "type": "string" },
           "details": {
-            "description": "Labelled facts in order, such as Entry and Exit.",
+            "description": "Labelled facts in order, such as Entry and Exit. A list prints as bullets.",
             "type": "object",
-            "additionalProperties": { "type": "string" }
+            "additionalProperties": { "anyOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }] }
           },
           "href": { "type": "string", "minLength": 1 }
         }

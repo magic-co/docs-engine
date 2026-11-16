@@ -1,7 +1,8 @@
 import { esc } from "../../render/html.ts";
 import type { RenderContext } from "../types.ts";
 import type { Figure } from "./model.ts";
-import { FigureError, runFigure } from "./run.ts";
+import { ModuleError } from "../module.ts";
+import { runFigure } from "./run.ts";
 
 export function renderFigure(figure: Figure, context: RenderContext): string {
   const file = context.file(figure.module);
@@ -10,7 +11,7 @@ export function renderFigure(figure: Figure, context: RenderContext): string {
   try {
     drawn = runFigure(file, context.root);
   } catch (error) {
-    if (error instanceof FigureError) return problem(error.message);
+    if (error instanceof ModuleError) return problem(error.message);
     throw error;
   }
   const css = drawn.css ? `<style>${drawn.css.replace(/<\/(style)/gi, "<\\/$1")}</style>` : "";
