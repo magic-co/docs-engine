@@ -24,10 +24,12 @@ Preconditions:
 - **Render.** Steps `{"goto": "/diagrams/tree/"}` and `{"expectCount": {"target": {"css": "docs-flow-node a"}, "count": 5}}`. The snapshot has `group "Roastery team"` with the links `Owner Ada`, `Head Roaster Bo`, `Shop Lead Cy`, `Roast Helper Di` and `Barista Ed and Flo`.
 - **Hover card.** Steps `{"hover": {"role": "link", "name": "Head Roaster Bo"}}` and `{"expectVisible": {"css": "ui-hover-card-content:not([hidden])", "hasText": "Reports to Owner"}}`. The card lists `Roast each batch` and `Cup each batch` under `Tasks`.
 - **Click to a row.** Steps `{"click": {"role": "link", "name": "Head Roaster Bo"}}` and `{"expectUrl": "#roastery-team-head-roaster$"}`.
-- **Data from a module.** In the site copy, change `Bo` to `Bea` in `docs/diagrams/data/team.yaml`. Step `{"goto": "/diagrams/tree/"}`, then `{"expectVisible": {"role": "link", "name": "Head Roaster Bea"}}`. Restore the file after.
+- **Data from a module.** With the page open, change `Bo` to `Bea` in the YAML file. Steps `{"run": "sed -i 's/name: Bo,/name: Bea,/' \"$DOCS_VERIFY_SITE/docs/diagrams/data/team.yaml\""}` and `{"expectVisible": {"role": "link", "name": "Head Roaster Bea"}, "timeout": 10000}`. Live reload shows the change. Run `control-docs restore docs/diagrams/data/team.yaml` after.
 - **Proof.** After the hover step, run `{"screenshot": "tree-hover"}` and `{"aria": "tree-hover"}`.
 
 ## Gotchas
+
+- Do not `goto` the page right after a file change. Live reload aborts that navigation. Wait for the new text instead.
 
 - The accessible name of a node is its label and its note, such as `Head Roaster Bo`. The `{"node": ...}` target matches only the label text, so use a role target.
 - The site copy links `node_modules` from the checkout, because `data/team.mjs` imports `yaml`. Without the link the tree shows an error in its place.
