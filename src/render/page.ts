@@ -4,7 +4,7 @@ import rehypeStringify from "rehype-stringify";
 import remarkRehype from "remark-rehype";
 import { unified } from "unified";
 import { SKIP, visit } from "unist-util-visit";
-import { checkDiagram, type Problem } from "../diagrams/index.ts";
+import { type BlockPlace, checkDiagram, type Problem } from "../diagrams/index.ts";
 import type { RenderContext } from "../diagrams/types.ts";
 import { repoFile } from "../site/files.ts";
 import { resolveLink } from "../site/links.ts";
@@ -19,7 +19,8 @@ export function renderContent(site: Site, page: Page): string {
   const tree = structuredClone(page.tree);
   const slugger = new GithubSlugger();
   for (const [heading, id] of headingSlugs(tree, slugger)) heading.data = { ...heading.data, hProperties: { id } };
-  const ids = diagramIds(tree, slugger);
+  const place = { root: site.root, page: page.path };
+  const ids = diagramIds(tree, slugger, place);
   const href = (url: string) => linkHref(site, page, url);
   visit(tree, (node, index, parent) => {
     if (node.type === "link" || node.type === "definition") node.url = href(node.url);
@@ -27,16 +28,16 @@ export function renderContent(site: Site, page: Page): string {
     const type = diagramType(node);
     if (!type) return;
     const file = (path: string) => repoFile(site.root, page.path, path);
-    const html: RootContent = { type: "html", value: renderDiagram(node, type, ids.get(node), slugger, { root: site.root, href, file }) };
+    const html: RootContent = { type: "html", value: renderDiagram(node, type, ids.get(node), slugger, place, { root: site.root, href, file }) };
     (parent.children as RootContent[]).splice(index, 1, html);
     return SKIP;
   });
   return toHtml.stringify(toHtml.runSync(tree as Root) as never);
 }
 
-function renderDiagram(node: Code, type: string, id: string | undefined, slugger: GithubSlugger, links: Pick<RenderContext, "root" | "href" | "file">): string {
+function renderDiagram(node: Code, type: string, id: string | undefined, slugger: GithubSlugger, place: BlockPlace, links: Pick<RenderContext, "root" | "href" | "file">): string {
   const line = node.position?.start.line ?? 1;
-  const checked = checkDiagram({ type, source: node.value, line });
+  const checked = checkDiagram({ type, source: node.value, line }, place);
   if (!checked.ok || id === undefined) return diagramError(type, checked.ok ? [] : checked.problems, node.value);
   return checked.type.render(checked.data, { id, ...links, anchor: (name) => slugger.slug(name) });
 }
