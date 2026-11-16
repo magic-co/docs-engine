@@ -1,6 +1,6 @@
 {
   "name": "@magic-co/docs-engine",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Turn the Markdown and yaml diagram blocks of a repo into a local docs site, with live reload and a blocking lint.",
   "license": "MIT",
   "repository": {
