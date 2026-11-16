@@ -42,4 +42,9 @@ describe("a diagram block with from", () => {
       { file: "docs/stock/c.md", line: 3, message: expect.stringMatching(/^the default export of the module: .*kind/) },
     ]);
   });
+
+  it("names the package that a module cannot find", () => {
+    const [message] = findings({ "docs/stock/a.md": page("needs.mjs"), "docs/stock/needs.mjs": `import "no-such-package";\nexport default {};\n` });
+    expect(message?.message).toMatch(/^the module failed: Cannot find package 'no-such-package'/);
+  });
 });

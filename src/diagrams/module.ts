@@ -21,7 +21,7 @@ export function runModule(file: string, cwd: string): unknown {
     maxBuffer: 64 * 1024 * 1024,
   });
   if (run.error || run.status !== 0) {
-    const reason = /^(?:\w*Error): (.+)$/m.exec(run.stderr ?? "")?.[1] ?? run.error?.message.split("\n")[0] ?? `the process stopped with code ${run.status}`;
+    const reason = /^\w*Error(?: \[\w+\])?: (.+)$/m.exec(run.stderr ?? "")?.[1] ?? run.error?.message.split("\n")[0] ?? `the process stopped with code ${run.status}`;
     throw new ModuleError(`the module failed: ${reason}`);
   }
   const result = run.output[3];

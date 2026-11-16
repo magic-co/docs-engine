@@ -38,6 +38,8 @@ cmd_start() {
     | xargs -0 -I{} sh -c 'if [ -e "$1" ]; then printf "%s\0" "$1"; fi' _ {} \
     | tar --null -T - -cf - | tar -xf - -C "$run/instance/site")
   cp -R "$run/instance/site" "$run/instance/baseline"
+  # Data modules and figures of the docs import packages, such as yaml. A link keeps the copy small.
+  ln -s "$REPO/node_modules" "$run/instance/site/node_modules"
   port="${DOCS_VERIFY_PORT:-$(( 20000 + RANDOM % 20000 ))}"
   cd "$run/instance/site"
   nohup node "$REPO/dist/cli.js" dev --port "$port" >"$run/instance/dev.out" 2>"$run/instance/dev.err" </dev/null &
