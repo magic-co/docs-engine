@@ -99,7 +99,7 @@ function drawEdge(edge: FlowEdge, byId: Map<string, Placed>, groups: Map<string,
     const right = b.cx > a.cx;
     const x1 = right ? a.x + a.w : a.x;
     const x2 = right ? b.x - 2 : b.x + b.w + 2;
-    return { d: `M${x1} ${a.cy} H${x2}`, side, label: edge.label ? labelAbove(edge.label, (x1 + x2) / 2, a.cy) : "" };
+    return { d: `M${x1} ${a.cy} H${x2}`, side, label: edge.label ? labelAbove(edge.label, (x1 + x2) / 2, a.cy, fit(Math.abs(x2 - x1))) : "" };
   }
   const down = b.cy > a.cy;
   const y1 = down ? a.y + a.h : a.y;
@@ -119,8 +119,8 @@ function centered(box: Box): Box & { cx: number; cy: number } {
   return { ...box, cx: box.x + box.w / 2, cy: box.y + box.h / 2 };
 }
 
-function labelAbove(text: string, x: number, y: number): string {
-  const lines = wrap(text);
+function labelAbove(text: string, x: number, y: number, max = 16): string {
+  const lines = wrap(text, max);
   const w = Math.max(...lines.map(monoWidth)) + 8;
   const top = y - 6 - lines.length * LINE;
   const spans = lines.map((line, i) => `<tspan x="${x}" dy="${i === 0 ? 0 : LINE}">${esc(line)}</tspan>`).join("");
@@ -130,6 +130,11 @@ function labelAbove(text: string, x: number, y: number): string {
 function labelBeside(text: string, x: number, y: number): string {
   const w = monoWidth(text) + 8;
   return `<rect x="${x + 6}" y="${y - 8}" width="${round(w)}" height="12"/><text x="${x + 10}" y="${y + 1}" text-anchor="start">${esc(text)}</text>`;
+}
+
+// A label over a short horizontal edge wraps to the width of the gap, so it does not run under the nodes.
+function fit(gap: number): number {
+  return Math.max(6, Math.min(16, Math.floor((gap - 8) / 5.6)));
 }
 
 function wrap(text: string, max = 16): string[] {

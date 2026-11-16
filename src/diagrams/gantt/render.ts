@@ -13,7 +13,7 @@ const AXIS = 52;
 const SECTION = 28;
 const ROW = 30;
 const WEEKS_UNTIL = 120;
-const MONTHS_UNTIL = 400;
+const MONTH_LABEL_W = 64;
 
 interface Tick {
   date: string;
@@ -135,10 +135,11 @@ function axis(timed: Timed[]): { first: string; last: string; ticks: Tick[] } {
   }
   const first = `${start.slice(0, 7)}-01`;
   const last = end.slice(8) === "01" ? end : addMonths(`${end.slice(0, 7)}-01`, 1);
-  const quarterly = daysBetween(first, last) > MONTHS_UNTIL;
+  const months = Math.round(daysBetween(first, last) / 30.44);
+  const every = [1, 3, 6, 12].find((step) => ((W - LABEL_W - RIGHT) / months) * step >= MONTH_LABEL_W) ?? 12;
   for (let date = first; date <= last; date = addMonths(date, 1)) {
     const index = Number(date.slice(5, 7)) - 1;
-    const labelled = !quarterly || index % 3 === 0;
+    const labelled = index % every === 0;
     ticks.push({ date, major: index === 0 || date === first, month: labelled && date < last });
   }
   return { first, last, ticks };
@@ -151,7 +152,7 @@ function labels(ticks: Tick[], x: (date: string) => number): string {
     if (!tick.month) continue;
     const left = x(tick.date) + 4;
     const before = shown.at(-1);
-    if (before && left < before.left + monthLabel(before.date, true).length * CHAR + 8) shown.pop();
+    if (before && left < before.left + monthLabel(before.date, shown.length === 1 || before.date.slice(5, 7) === "01").length * CHAR + 8) shown.pop();
     shown.push({ left, date: tick.date });
   }
   return shown

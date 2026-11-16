@@ -35,6 +35,15 @@ describe("tree", () => {
     expect(left(page, "shop")).toBeGreaterThan(left(page, "helper"));
   });
 
+  it("stacks two or more leaves of one parent in its column, under it", () => {
+    const block = "title: T\nnodes:\n  a: { label: A }\n  b: { label: B, parent: a }\n  c: { label: C, parent: a }";
+    const top = (page: string, id: string) => Number(new RegExp(`<docs-flow-node value="${id}"[^>]*style="left:[\\d.]+%;top:([\\d.]+)%`).exec(page)?.[1]);
+    const page = html(block);
+    expect(left(page, "b")).toBeCloseTo(left(page, "c"), 2);
+    expect(left(page, "b")).toBeGreaterThan(left(page, "a"));
+    expect(top(page, "c")).toBeGreaterThan(top(page, "b"));
+  });
+
   it("names the parent with the relation in each card and in the connections", () => {
     const page = html();
     expect(page).toContain('<p class="docs-card-kind">Reports to Owner</p><p class="docs-card-title">Head Roaster</p>');
