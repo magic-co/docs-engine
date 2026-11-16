@@ -57,6 +57,12 @@ describe("gantt", () => {
     expect(labels).toEqual(["Mar 2027", "Apr", "May", "Jun", "Jul", "Aug"]);
   });
 
+  it("keeps the later month label when two would run into each other", () => {
+    const block = "title: T\nsections: { a: { label: A } }\ntasks:\n  lease: { label: Lease, section: a, on: 2027-02-26 }\n  fit: { label: Fit, section: a, start: 2027-03-01, weeks: 15 }";
+    const labels = [...html(block).matchAll(/<text class="docs-gantt-month"[^>]*>([^<]+)<\/text>/g)].map((match) => match[1]);
+    expect(labels).toEqual(["Mar 2027", "Apr", "May", "Jun"]);
+  });
+
   it("finds bad sections, after tasks, loops, dates, and starts or ends given twice", () => {
     const block = (tasks: string) => page(`title: T\nsections: { a: { label: A } }\ntasks:\n${tasks}`);
     expect(

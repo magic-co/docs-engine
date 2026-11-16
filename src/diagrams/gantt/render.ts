@@ -20,8 +20,8 @@ interface Tick {
   major: boolean;
   /** The day number, for a weekly tick. */
   day?: string;
-  /** The month label, on the row above the day numbers. */
-  month?: string;
+  /** The tick gets a month label, on the row above the day numbers. */
+  month?: boolean;
 }
 
 const CHAR = 6.6;
@@ -38,7 +38,7 @@ export function renderGantt(gantt: Gantt, context: RenderContext): string {
   for (const [sectionId, section] of Object.entries(gantt.sections)) {
     const members = timed.filter((item) => item.task.section === sectionId);
     zones.push(
-      `<rect class="docs-gantt-zone" x="${PAD - 2}" y="${y}" width="${W - 2 * PAD + 4}" height="${SECTION + members.length * ROW}" rx="6"/>` +
+      `<rect class="docs-flow-group" x="${PAD - 2}" y="${y}" width="${W - 2 * PAD + 4}" height="${SECTION + members.length * ROW}" rx="6"/>` +
         `<text class="docs-flow-group-label" x="${PAD + 8}" y="${y + 18}">${esc(section.label.toUpperCase())}</text>`,
     );
     y += SECTION;
@@ -107,6 +107,7 @@ function node(item: Timed, section: string, y: number, x: (date: string) => numb
     description: task.description,
     details: { ...(after === undefined ? {} : { After: after }), ...task.details },
     href: task.href,
+    row: true,
     inner: `<span class="docs-gantt-label" style="width:${pct(LABEL_W - PAD - 12, span)}">${esc(task.label)}</span>${mark}`,
   };
 }
@@ -123,13 +124,12 @@ function axis(timed: Timed[]): { first: string; last: string; ticks: Tick[] } {
   const start = timed.reduce((min, item) => (item.start < min ? item.start : min), "9999-12-31");
   const end = addDays(timed.reduce((max, item) => (item.end > max ? item.end : max), "0000-01-01"), 1);
   const ticks: Tick[] = [];
-  const month = (date: string, year: boolean) => formatDate(date, "en-US", { month: "short", ...(year ? { year: "numeric" } : {}) });
   if (daysBetween(start, end) <= WEEKS_UNTIL) {
     const first = startOfWeek(start, 1);
     const last = startOfWeek(addDays(end, 6), 1);
     for (let date = first; date <= last; date = addDays(date, 7)) {
       const newMonth = date === first || date.slice(5, 7) !== addDays(date, -7).slice(5, 7);
-      ticks.push({ date, major: newMonth, day: String(Number(date.slice(8))), month: newMonth ? month(date, date === first || date.slice(5, 7) === "01") : undefined });
+      ticks.push({ date, major: newMonth, day: String(Number(date.slice(8))), month: newMonth });
     }
     return { first, last, ticks };
   }
@@ -139,22 +139,28 @@ function axis(timed: Timed[]): { first: string; last: string; ticks: Tick[] } {
   for (let date = first; date <= last; date = addMonths(date, 1)) {
     const index = Number(date.slice(5, 7)) - 1;
     const labelled = !quarterly || index % 3 === 0;
-    ticks.push({ date, major: index === 0 || date === first, month: labelled && date < last ? month(date, date === first || index === 0) : undefined });
+    ticks.push({ date, major: index === 0 || date === first, month: labelled && date < last });
   }
   return { first, last, ticks };
 }
 
-// A month label that would run into the label before it is left out.
+// When two month labels would run into each other, the later one stays. The first label and each January give the year.
 function labels(ticks: Tick[], x: (date: string) => number): string {
-  let free = -Infinity;
-  return ticks
-    .flatMap((tick) => {
-      const left = x(tick.date) + 4;
-      if (tick.month === undefined || left < free) return [];
-      free = left + tick.month.length * CHAR + 8;
-      return [`<text class="docs-gantt-month" x="${round(left)}" y="${AXIS - 22}">${esc(tick.month)}</text>`];
-    })
+  const shown: { left: number; date: string }[] = [];
+  for (const tick of ticks) {
+    if (!tick.month) continue;
+    const left = x(tick.date) + 4;
+    const before = shown.at(-1);
+    if (before && left < before.left + monthLabel(before.date, true).length * CHAR + 8) shown.pop();
+    shown.push({ left, date: tick.date });
+  }
+  return shown
+    .map(({ left, date }, index) => `<text class="docs-gantt-month" x="${round(left)}" y="${AXIS - 22}">${esc(monthLabel(date, index === 0 || date.slice(5, 7) === "01"))}</text>`)
     .join("");
+}
+
+function monthLabel(date: string, year: boolean): string {
+  return formatDate(date, "en-US", { month: "short", ...(year ? { year: "numeric" } : {}) });
 }
 
 function pct(value: number, total: number): string {

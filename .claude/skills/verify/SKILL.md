@@ -1,6 +1,6 @@
 ---
 name: verify
-description: "Drive docs-engine the way a user does and capture proof. The surfaces are the `docs` CLI (lint, build) and the local site of `docs dev` (nav, routes, interactive flow diagrams, live reload). Use it to prove a change to the engine works in the real app, not only in the unit tests, and for /verify on this repo."
+description: "Drive docs-engine the way a user does and capture proof. The surfaces are the `docs` CLI (lint, build) and the local site of `docs dev` (nav, routes, interactive flow, tree and Gantt diagrams, live reload). Use it to prove a change to the engine works in the real app, not only in the unit tests, and for /verify on this repo."
 ---
 
 # Verify docs-engine

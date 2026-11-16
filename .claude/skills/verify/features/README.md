@@ -37,6 +37,8 @@ Each feature file starts with an H1 title and one paragraph about the user-visib
 
 - [Browse the site](./browse-site.md) covers the home page, the nav, the routes, the slash redirect, the pages that are not in the site and the 404 page.
 - [Flow diagram](./flow-diagram.md) covers the hover card, the keyboard focus and arrow keys, and the links of a node to its table row or its `href`.
+- [Tree diagram](./tree-diagram.md) covers a `yaml tree` block, its cards and rows, and the data of a `from` module.
+- [Gantt chart](./gantt-diagram.md) covers a `yaml gantt` block, its axis labels, its cards and its links.
 - [Figure](./figure.md) covers a `yaml figure` block: the drawing and the script of its module, and the error in place of a figure whose module fails.
 - [Live reload](./live-reload.md) covers the reload of an open page after an edit, and a diagram error in the page.
 - [Lint the docs](./lint.md) covers the findings of each rule, the line format, the exit codes, the figure source check and the code-path options.

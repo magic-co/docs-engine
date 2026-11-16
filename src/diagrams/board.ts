@@ -24,6 +24,8 @@ export interface BoardNode extends Box {
   description?: string;
   details?: Details;
   href?: string;
+  /** Give the node a table row even with no description and no details. */
+  row?: boolean;
   /** The HTML inside the link. Default: the label. */
   inner?: string;
 }
@@ -62,7 +64,7 @@ export function renderBoard(board: Board, context: RenderContext): string {
 }
 
 function hasRow(node: BoardNode): boolean {
-  return node.description !== undefined || (node.details !== undefined && Object.keys(node.details).length > 0);
+  return node.row === true || node.description !== undefined || (node.details !== undefined && Object.keys(node.details).length > 0);
 }
 
 function target(node: BoardNode, context: RenderContext, row: string | undefined): { href?: string; hint: string } {
