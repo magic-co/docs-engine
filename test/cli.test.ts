@@ -171,6 +171,22 @@ describe("docs dev requests", () => {
     expect([moved.status, moved.headers.get("location")]).toEqual([301, "/guides/%E7%84%99%E7%85%8E/"]);
   });
 
+  it("links each stylesheet in the head, so a page does not draw without styles first", async () => {
+    const theme = ":root { --accent: #2f7d5b; }\n";
+    const url = await dev(repo({ "docs/theme.css": theme, "docs.config.json": '{ "theme": "docs/theme.css" }' }), 47371);
+    const html = await (await fetch(new URL("/guides/roasting/", url))).text();
+    const head = html.slice(0, html.indexOf("</head>"));
+    const links = [...head.matchAll(/<link rel="stylesheet" href="([^"]+)">/g)].map((match) => match[1]!);
+    expect(links.map((href) => href.split("/").at(-1))).toEqual(["fonts.css", "tokens.css", "site.css", "flow.css", "gantt.css", "theme.css"]);
+    expect(head.indexOf('<link rel="stylesheet"')).toBeLessThan(head.indexOf('client.ts"></script>'));
+    for (const href of links) {
+      const response = await fetch(new URL(href, url), { headers: { accept: "text/css,*/*;q=0.1" } });
+      expect(response.headers.get("content-type"), href).toContain("text/css");
+    }
+    const last = await fetch(new URL(links.at(-1)!, url), { headers: { accept: "text/css" } });
+    expect(await last.text()).toContain("--accent: #2f7d5b");
+  });
+
   it("answers 400 for a malformed URL and keeps serving", async () => {
     const url = await dev(repo(), 47351);
     expect((await fetch(new URL("/%", url))).status).toBe(400);
